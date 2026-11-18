@@ -344,3 +344,62 @@ def generate(
         f"Still rate limited after {config.MAX_RETRIES} attempts. Wait a "
         f"minute and try again — your key is fine.\nLast error: {last_error}"
     )
+
+
+# ─── Embeddings (capstone) ───────────────────────────────────────────────────
+
+
+def embed(texts: list[str], task_type: str) -> list[list[float]]:
+    """
+    Turn each text into an embedding vector, in one request.
+
+    Goes through the same pacing, budget and error handling as generate(), so a
+    bad key raises ModelUnavailable here too. Caching is left to the caller
+    (tools.py keeps the listing vectors on disk), because what's worth caching
+    is the whole index, not one request.
+
+    Args:
+        texts:     the strings to embed. One request, however many there are.
+        task_type: "RETRIEVAL_DOCUMENT" for listings, "RETRIEVAL_QUERY" for
+                   what the user typed. The model embeds the two sides
+                   slightly differently so they line up better.
+
+    Returns:
+        One list of floats per input text, in the same order.
+    """
+    global _session_calls
+
+    if not texts:
+        return []
+    _check_budget()
+
+    last_error: Exception | None = None
+    for attempt in range(config.MAX_RETRIES):
+        _wait_for_slot()
+        try:
+            client = _get_client()
+            _call_times.append(time.monotonic())
+            _session_calls += 1
+            response = client.models.embed_content(
+                model=config.EMBEDDING_MODEL,
+                contents=texts,
+                config={"task_type": task_type},
+            )
+            return [list(e.values) for e in response.embeddings]
+        except Exception as exc:  # noqa: BLE001 — surfaced below
+            last_error = exc
+            message = str(exc).lower()
+            rate_limited = (
+                "429" in message
+                or "resource" in message and "exhaust" in message
+                or "rate" in message and "limit" in message
+            )
+            if not rate_limited:
+                raise ModelUnavailable(_explain(exc)) from exc
+            time.sleep(_retry_delay(exc, attempt))
+
+    raise RuntimeError(
+        f"Embedding still rate limited after {config.MAX_RETRIES} attempts.\n"
+        f"Last error: {last_error}"
+    )
+
