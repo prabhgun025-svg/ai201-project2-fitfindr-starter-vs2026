@@ -13,6 +13,8 @@ Build and test your three tools in `tools.py` first. Then come here.
     python agent.py          runs both example paths below
 """
 
+import re
+
 import config
 import trace
 from tools import suggest_outfit, create_fit_card
@@ -47,6 +49,78 @@ def new_session(query: str, wardrobe: dict) -> dict:
         "fit_card": None,            # what create_fit_card returned
         "error": None,               # set when the run ended early
     }
+
+
+# ── query parsing ─────────────────────────────────────────────────────────────
+#
+# Regex, applied in three steps: price, then size, then whatever is left is the
+# description. Each pattern only matches whole words, and only the span that
+# matched is removed. (The first version had neither rule, so "dresses" was
+# read as size SS with the description "dree", and "under $30" also became
+# size 30. See README → Failure Modes and results/capstone_verdicts_*.md.)
+
+# A price is a number after "$" or after under / below / less than / max / up to.
+_PRICE = re.compile(
+    r"(?:\b(?:under|below|less\s+than|max|up\s+to)\s*\$?|\$)\s*(\d+(?:\.\d+)?)"
+    r"(?:\s*(?:dollars|bucks|usd)\b)?",
+    re.IGNORECASE,
+)
+# "size X": letters (M, XXS), a number (8), a waist (W30) or a shoe size (US 8.5).
+_SIZE_WORD = re.compile(
+    r"\bsize\s+(US\s*\d+(?:\.\d+)?|W\d{2}|\d+(?:\.\d+)?|XXXL|XXL|XL|XXS|XS|S|M|L)(?![\w'’])",
+    re.IGNORECASE,
+)
+# Size labels standing alone. Multi-letter ones in any case ("xl"); single
+# letters only in capitals, so the "s" in "a s/s tee" or "I'm" isn't a size.
+_SIZE_ALONE_MULTI = re.compile(r"(?<![\w'’$])(XXXL|XXL|XL|XXS|XS)(?![\w'’])", re.IGNORECASE)
+_SIZE_ALONE_SINGLE = re.compile(r"(?<![\w'’$])(S|M|L)(?![\w'’])")
+_SIZE_WAIST_SHOE = re.compile(r"(?<![\w'’])(W\d{2}|US\s*\d+(?:\.\d+)?)(?![\w'’])", re.IGNORECASE)
+
+
+def _normalise_size(raw: str) -> str:
+    raw = re.sub(r"\s+", " ", raw.strip())
+    if re.fullmatch(r"(?i)us ?\d+(\.\d+)?", raw):
+        return "US " + re.sub(r"(?i)us ?", "", raw)
+    return raw.upper()
+
+
+def _cut(text: str, match: re.Match) -> str:
+    """Remove exactly the matched span, nothing else."""
+    return text[: match.start()] + " " + text[match.end():]
+
+
+def parse_query(query: str) -> dict:
+    """
+    Split a query into description, size and max_price.
+
+    >>> parse_query("vintage graphic tee under $30")
+    {'description': 'vintage graphic tee', 'size': None, 'max_price': 30.0}
+    >>> parse_query("dresses")
+    {'description': 'dresses', 'size': None, 'max_price': None}
+    """
+    text = query
+    max_price = None
+    size = None
+
+    price = _PRICE.search(text)
+    if price:
+        max_price = float(price.group(1))
+        text = _cut(text, price)
+
+    for pattern in (_SIZE_WORD, _SIZE_WAIST_SHOE, _SIZE_ALONE_MULTI, _SIZE_ALONE_SINGLE):
+        found = pattern.search(text)
+        if found:
+            size = _normalise_size(found.group(1))
+            text = _cut(text, found)
+            break
+
+    # Tidy what's left: commas to spaces, collapse spaces, drop a dangling
+    # "in"/"for" left behind by "tee in size M" or "jeans for under $40".
+    text = re.sub(r"[,]+", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    text = re.sub(r"(?i)(?:\s+\b(?:in|for|and|at)\b)+$", "", text).strip()
+
+    return {"description": text, "size": size, "max_price": max_price}
 
 
 # ── planning loop ─────────────────────────────────────────────────────────────
@@ -109,33 +183,10 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     """
     session = new_session(query, wardrobe)
     
-    # Parse the query using regex to extract price and size
-    import re
-    
-    description = query
-    max_price = None
-    size = None
-    
-    # Extract price: look for "under $X" or "$X" or "under X"
-    price_match = re.search(r'(?:under\s+)?(?:\$)?(\d+(?:\.\d+)?)', query, re.IGNORECASE)
-    if price_match:
-        max_price = float(price_match.group(1))
-        description = re.sub(r'(?:under\s+)?(?:\$)?\d+(?:\.\d+)?', '', description, flags=re.IGNORECASE)
-    
-    # Extract size: look for "size X" or common size abbreviations
-    size_match = re.search(r'(?:size\s+)?([XS]+|M|L|XL|XXL|\d+)', query, re.IGNORECASE)
-    if size_match:
-        size = size_match.group(1).upper()
-        description = re.sub(r'(?:size\s+)?([XS]+|M|L|XL|XXL|\d+)', '', description, flags=re.IGNORECASE)
-    
-    # Clean up description
-    description = description.replace(',', ' ').strip()
-    
-    session["parsed"] = {
-        "description": description,
-        "size": size,
-        "max_price": max_price,
-    }
+    session["parsed"] = parse_query(query)
+    description = session["parsed"]["description"]
+    size = session["parsed"]["size"]
+    max_price = session["parsed"]["max_price"]
     trace.step("parse_query", inputs=query, returned=str(session["parsed"]))
     
     # Call search_listings over MCP
