@@ -66,6 +66,19 @@ SEARCH_RESULT_LIMIT = 10
 
 MODEL = os.getenv("AI201_MODEL", "gemini-3.5-flash-lite")
 
+# Capstone: the model that turns listings and queries into vectors for the
+# embedding-search fallback. Listing vectors are computed once and kept in
+# .cache/, so this is one request for the whole catalogue, not one per run.
+EMBEDDING_MODEL = os.getenv("AI201_EMBEDDING_MODEL", "gemini-embedding-001")
+
+# Embedding search always finds a "closest" listing, even for nonsense. Below
+# this cosine similarity a listing doesn't count as a match, so the fallback
+# can still come back empty and the agent's stop branch still means something.
+# Calibrated on queries outside the eval set: off-topic text ("spaceship
+# engine parts", "tax return form") topped out at 0.575; real clothing queries
+# ("jorts", "flannels", "windbreakers") put the right item at 0.68–0.70.
+EMBEDDING_MIN_SIMILARITY = 0.60
+
 
 # ─── Rate limiting and quota guards ──────────────────────────────────────────
 # You should not need to touch these.
