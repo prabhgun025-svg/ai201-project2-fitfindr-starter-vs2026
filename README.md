@@ -19,6 +19,7 @@
 > **The rest of this file is your submission.** Fill it in as you go.
 
 ---
+## Capstone is at the bottom
 
 <!-- ─────────────────────────────────────────────────────────────────────────
      HOW TO USE THIS FILE
@@ -673,40 +674,21 @@ It helped as now the ID and price is showing within each run and try for the thi
 
 While nothing is technically broken and technically every criterion is passing, the catch for criterion 1 is that sometimes it finds the wrong item or the match is incorrect. But since the criterions only ask if all three tools run, it is techncially passing. This is something I would have to fix and make sure that the criterion is tightened. 
 
+## Capstone 
 
-<!-- ═════════════════════════════════════════════════════════════════════
+**What Shape did I choose**
+I picked Shape C: add one real capability to a system that already works. My project already has a fourth tool (price comparison), so I'm adding a second retrieval strategy to search_listings.
+Right now search uses keyword overlap, which only matches exact words. "tee" returns 5 listings but "tees" returns 0, and "denim pants" misses jeans whose titles don't contain "pants." This is the same weakness I described in What's Still Broken: criterion 1 passes even when search returns the wrong item.
+The new strategy is embedding search: each listing's title, description, and style tags are turned into an embedding, and listings are ranked by cosine similarity to the query's embedding. Keyword search stays as the default. The agent falls back to embeddings when keyword search returns nothing, and the trace records that branch.
+How I'll know it works: I'll label about 15 queries with the listing IDs that should come back. I'll include plurals, synonyms, and queries keyword search already handles. I'll report hit@3 (a correct item in the top 3) for both strategies side by side. 
+My target, set before running: embeddings hit on at least 12/15, beat keyword on the plural and synonym queries, and do no worse on the queries keyword already gets right.
 
-     SUBMISSION CHECKLIST — unit 3
+**What is out of scope** 
 
-       [ ] criteria.md has five numbered criteria, each with a target
-       [ ] Each criterion has a reason underneath it
-       [ ] All five unit 3 sections above have real content
-       [ ] Tool Inventory: all three tools, inputs WITH TYPES, a specific
-           return value, and the empty case
-       [ ] Planning Loop names the branch rule and agent.py::run_agent
-       [ ] Sample Run: one full query plus the three per-tool tests, as text
-       [ ] At least four new commits
-       [ ] Repository URL submitted — WRITE IT DOWN, you submit the same one
-           next unit
+1. **I'm not replacing keyword search or blending the two.** Keyword search stays the default, and embeddings only run when it comes back empty. Merging both scores into one hybrid ranking would mean picking weights and tuning them. Then I couldn't report hit@3 for each strategy on its own, which is the whole measurement.
+2. **I'm not adding a vector database or a reranker.** There are 40 listings. I'll embed them once and keep the vectors in memory. A database, or a second model pass to re-sort the top results, is more to build and debug, and the comparison doesn't need it.
+3. **I'm not touching the other tools or the interface.** `suggest_outfit`, `create_fit_card`, `price_comparison`, style memory, `app.py` and the CLI output all stay as they are. If the numbers move, it's because of retrieval and not because I also changed a prompt.
 
-     SUBMISSION CHECKLIST — unit 4
-
-       [ ] mcp_server.py exists with one tool registered
-           (or a written record of exactly where the rewire broke)
-       [ ] Run Log — Before, five criteria, five tries each
-       [ ] Real output pasted underneath, naming file and function
-       [ ] A verdict on every criterion
-       [ ] A diagnosis for every miss, naming a place AND a mechanism
-       [ ] Loop Trace, with the MCP call visible in it
-       [ ] All three failure modes triggered and handled
-       [ ] One improvement, with Run Log — After in the same format
-       [ ] What's Still Broken
-       [ ] At least four new commits
-       [ ] The SAME repository URL as last unit
-
-     Do not delete and recreate this repository. Your commit history is what
-     shows your criteria existed before your results did.
-     ═════════════════════════════════════════════════════════════════════ -->
 
 ---
 
