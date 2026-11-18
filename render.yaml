@@ -1,0 +1,23 @@
+# Render Blueprint for FitFindr. Render reads this file from the repo root when
+# you create the service with New → Blueprint. See RUNNING.md → "Deployment".
+
+services:
+  - type: web
+    name: fitfindr
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # Sync worker only (the default). An async worker breaks every MCP call,
+    # because mcp_client uses asyncio.run(). --timeout 120 because one request
+    # can wait up to a minute on the model's rate limiter, and gunicorn's
+    # default 30s timeout would kill the worker mid-request.
+    startCommand: gunicorn serve:app --timeout 120
+    healthCheckPath: /health
+    envVars:
+      # requirements.txt supports 3.11–3.13, not 3.14. Pin the version tested.
+      - key: PYTHON_VERSION
+        value: 3.13.0
+      # Secret. Render asks for the value when the Blueprint is created; it
+      # never goes in this file or the repo.
+      - key: GEMINI_API_KEY
+        sync: false

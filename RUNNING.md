@@ -4,6 +4,110 @@ Everything about how the starter works and how to use it.
 
 ---
 
+## Deployment
+
+FitFindr runs on **Render** (free web service) as an HTTP API.
+
+| | |
+|---|---|
+| **Live URL** | `https://<your-service>.onrender.com` ← *fill in after the first deploy* |
+| **Platform** | Render, free plan (512 MB RAM, sleeps after ~15 min idle) |
+| **Config** | [`render.yaml`](render.yaml) in the repo root |
+| **Build command** | `pip install -r requirements.txt` |
+| **Start command** | `gunicorn serve:app --timeout 120` |
+| **Health check** | `GET /health` → `{"status":"ok"}` |
+
+### Try it
+
+The first request after the service has been idle takes about a minute while
+Render wakes it up. After that, a request takes a few seconds.
+
+```bash
+curl https://<your-service>.onrender.com/health
+
+curl -X POST https://<your-service>.onrender.com/ask \
+  -H 'Content-Type: application/json' \
+  -d '{"query": "vintage graphic tee under $30"}'
+```
+
+`/ask` returns the agent's session as JSON. Check `error` first: if it isn't
+`null`, the run stopped early and says why. Otherwise read `selected_item`,
+`outfit_suggestion` and `fit_card`. `search_strategy` is `"keyword"`, or
+`"embedding"` when keyword search came back empty and the embedding fallback
+ran. Sending no `query` returns HTTP 400 with an example of the right body.
+
+### How it got there
+
+1. Pushed this repo to GitHub.
+2. In the Render dashboard: **New → Blueprint**, then connected the repo. Render
+   reads `render.yaml` and creates one web service named `fitfindr`.
+3. When prompted, pasted the Gemini key as the value of `GEMINI_API_KEY`. It
+   is stored as a Render secret and is never committed.
+4. Render runs the build command, then the start command, and waits for
+   `/health` to answer before sending traffic.
+5. Every later push to the default branch redeploys automatically.
+
+Why the start command is exactly `gunicorn serve:app --timeout 120`:
+
+- **Sync worker (gunicorn's default).** Not `-k gevent`, `-k eventlet` or
+  uvicorn. `mcp_client.call_tool` uses `asyncio.run()`, which can't start
+  inside a running event loop, so an async worker breaks every MCP call.
+- **`--timeout 120`.** gunicorn kills a worker after 30 s by default. A request
+  that hits the model's rate limiter (15 requests a minute on the free tier)
+  can wait up to 60 s, so the default would kill it partway through.
+- **No `--bind`.** gunicorn listens on `0.0.0.0:$PORT` when the host sets
+  `PORT`, and Render does.
+
+### What the environment needs
+
+| Need | Value |
+|---|---|
+| Python | **3.13.0** (tested). 3.11 or 3.12 also work. **Not 3.14**: several pinned packages don't support it. Render's version is pinned with `PYTHON_VERSION` in `render.yaml` |
+| Dependencies | [`requirements.txt`](requirements.txt), pinned with lower and upper bounds. Versions resolved and tested: `Flask 3.1.3`, `google-genai 1.75.0`, `gunicorn 23.0.0`, `mcp 1.30.0`, `python-dotenv 1.1.1`. About 74 MB installed |
+| Secrets | `GEMINI_API_KEY`: a Google AI Studio key. Locally it goes in `.env`; on Render it's a dashboard secret |
+| Model files | **None.** Generation (`gemini-3.5-flash-lite`) and embeddings (`gemini-embedding-001`) both run on Google's API. Nothing is downloaded |
+| Disk | The embedding index for the 40 listings is built on first use and cached in `.cache/` (1.6 MB, gitignored). Render's disk is wiped on every deploy and restart, so the first embedding search after a restart rebuilds it. That costs one extra API request, not a failure |
+| Memory | Fits in 512 MB because `serve.py` handles one request at a time. Each MCP call starts a second Python process, and two at once wouldn't fit |
+
+Optional settings: `AI201_CACHE=0` turns off response caching;
+`AI201_MODEL` and `AI201_EMBEDDING_MODEL` change the models.
+
+### Running the same thing locally
+
+From a clean checkout:
+
+```bash
+python3.13 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env              # paste your key into .env
+python test.py                    # should end "10 passed, 0 failed"
+gunicorn serve:app --timeout 120  # the host's exact command; listens on :8000
+# or: python serve.py             # Flask's dev server, listens on :5000
+```
+
+These steps were tested in a fresh copy of the repo (only the files git tracks,
+no `.venv`, no `.cache`) with a new virtual environment. All 10 checks in
+`test.py` passed, and the embedding index was built from scratch on the first
+query. `gunicorn serve:app --timeout 120` was also run locally and checked:
+
+- `/health` answered.
+- `/ask` with `"purse"` went through the embedding fallback and returned a
+  fit card.
+- `/ask` with an impossible query stopped with an error message.
+- `/ask` with an empty body returned HTTP 400.
+
+### Known limitation you'll see on the live URL
+
+The regex query parser in `agent.py::run_agent` treats any S, M, L or XL letter
+in the query, and any number, as a size. "purse" is searched as size S, and
+"graphic tee under $30" as size 30. Many queries therefore search with the
+wrong size and a garbled description. The README's **Failure Modes** and
+**What's Still Broken** sections cover this. It's a parsing bug, not a
+deployment problem: the same query gives the same result locally.
+
+---
+
 ## Before your first class
 
 Setup happens **before class**. The [environment setup page](../pages/ide_setup)
@@ -83,6 +187,8 @@ does nothing.
 | `python mcp_client.py` | Asks the server what it offers — **unit 4** |
 | `python run_eval.py --label before` | Runs every scenario five times and writes the run log — **unit 4** |
 | `python serve.py` | Serves the agent over HTTP instead of exiting — **unit 9** |
+| `gunicorn serve:app --timeout 120` | The deployed start command. See **Deployment** at the top |
+| `python eval_retrieval.py` | Capstone: hit@3 for keyword vs embedding search on 15 labelled queries |
 
 Useful flags on `ask`:
 
@@ -134,10 +240,11 @@ curl -X POST http://localhost:5000/ask \
   -d '{"query": "vintage graphic tee under $30"}'
 ```
 
-On a host, the start command is:
+On a host, the start command is (see **Deployment** at the top for why
+`--timeout 120`):
 
 ```bash
-gunicorn serve:app
+gunicorn serve:app --timeout 120
 ```
 
 | Thing | What it means |
@@ -146,7 +253,7 @@ gunicorn serve:app
 | `POST /ask` | `{"query": "...", "wardrobe": {...}}` — wardrobe optional. Returns the session dict, `error` and all |
 | `GET /health` | Says `ok` if the app is awake |
 | It answers one request at a time | On purpose. A second request waits for the first to finish, and prints `[serve] another request is still running` while it waits. An MCP tool call starts a whole second Python process, and the free tier's 512 MB has no room for two of those at once — and `generate.py`'s rate-limit counting assumes one caller. The reasoning is written out in `serve.py` |
-| `gunicorn serve:app`, exactly | Not `-k gevent`, not `-k eventlet`, not wrapped for uvicorn. `mcp_client.call_tool` uses `asyncio.run()`, which won't start inside a running event loop, so an async worker breaks **every** MCP call — and only once you've deployed it |
+| `gunicorn serve:app --timeout 120`, exactly | Not `-k gevent`, not `-k eventlet`, not wrapped for uvicorn. `mcp_client.call_tool` uses `asyncio.run()`, which won't start inside a running event loop, so an async worker breaks **every** MCP call — and only once you've deployed it |
 | The first request is slow | The free tier puts your app to sleep after about fifteen minutes of nothing. The next request wakes it up and waits for it — around a minute. Not a bug, and worth knowing before you demo it |
 
 `serve.py` ships with **no logging and no timing in it**, on purpose. You add
@@ -171,6 +278,9 @@ the point of the session.
 | `scenarios.py` | What your test runs. **You fill this in** |
 | `run_eval.py` | Runs the scenarios repeatedly and writes the run log |
 | `criteria.md` | Your five acceptance criteria. **You fill this in** |
+| `retrieval_queries.py` | Capstone: 15 labelled queries for the retrieval eval |
+| `eval_retrieval.py` | Capstone: hit@3 for keyword vs embedding search, written to `results/` |
+| `render.yaml` | Render deploy config: build and start commands, Python version, the secret it needs |
 | `data/` | 40 listings and the wardrobe schema |
 | `utils/data_loader.py` | Loading the data. Use this rather than reading the files yourself |
 | `results/` | Run logs. **Commit these** — they're your evidence |
