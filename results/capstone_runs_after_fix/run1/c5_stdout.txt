@@ -1,0 +1,262 @@
+Cache is OFF for this run — that's deliberate.
+
+matching query completes  (example wardrobe)
+  query: vintage graphic tee under $30
+[1] parse_query
+      in:  vintage graphic tee under $30
+      out: {'description': 'vintage graphic tee', 'size': None, 'max_price': 30.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'vintage graphic tee', 'size': None, 'max_price': 30.0}
+      out: 10 items: Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey, Y2K Baby Tee — Butterfly Print … +7 more
+      →    branch: results, continuing
+[3] select_item
+      in:  10 results
+      out: Graphic Tee — 2003 Tour Bootleg Style ($24.0, depop)
+      →    first result
+[4] suggest_outfit
+      in:  new_item=lst_006 'Graphic Tee — 2003 Tour Bootleg Style' ($24.0), wardrobe=10 items
+      out: [lst_006 · $24.0] Here are two specific outfit suggestions that blend the vintage, grunge-leaning vibe of your…
+[5] create_fit_card
+      in:  new_item=lst_006 'Graphic Tee — 2003 Tour Bootleg Style' ($24.0), outfit=<suggest_outfit text>
+      out: [lst_006 · $24.0] Score a major piece of music history with this 2003 tour bootleg graphic tee, sitting in gre…
+  try 1: completed — fit card 297 chars
+[1] parse_query
+      in:  vintage graphic tee under $30
+      out: {'description': 'vintage graphic tee', 'size': None, 'max_price': 30.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'vintage graphic tee', 'size': None, 'max_price': 30.0}
+      out: 10 items: Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey, Y2K Baby Tee — Butterfly Print … +7 more
+      →    branch: results, continuing
+[3] select_item
+      in:  10 results
+      out: Graphic Tee — 2003 Tour Bootleg Style ($24.0, depop)
+      →    first result
+[4] suggest_outfit
+      in:  new_item=lst_006 'Graphic Tee — 2003 Tour Bootleg Style' ($24.0), wardrobe=10 items
+      out: [lst_006 · $24.0] For $24, a 2003 tour bootleg-style tee is a great pickup—it adds that distressed, effortless…
+[5] create_fit_card
+      in:  new_item=lst_006 'Graphic Tee — 2003 Tour Bootleg Style' ($24.0), outfit=<suggest_outfit text>
+      out: [lst_006 · $24.0] Scored this sick 2003 tour bootleg-style graphic tee for just $24 on Depop, and the distress…
+  try 2: completed — fit card 345 chars
+[1] parse_query
+      in:  vintage graphic tee under $30
+      out: {'description': 'vintage graphic tee', 'size': None, 'max_price': 30.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'vintage graphic tee', 'size': None, 'max_price': 30.0}
+      out: 10 items: Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey, Y2K Baby Tee — Butterfly Print … +7 more
+      →    branch: results, continuing
+[3] select_item
+      in:  10 results
+      out: Graphic Tee — 2003 Tour Bootleg Style ($24.0, depop)
+      →    first result
+[4] suggest_outfit
+      in:  new_item=lst_006 'Graphic Tee — 2003 Tour Bootleg Style' ($24.0), wardrobe=10 items
+      out: [lst_006 · $24.0] Here are two ways to style your new 2003 tour bootleg tee using items already in your wardro…
+[5] create_fit_card
+      in:  new_item=lst_006 'Graphic Tee — 2003 Tour Bootleg Style' ($24.0), outfit=<suggest_outfit text>
+      out: [lst_006 · $24.0] Found the holy grail: an authentic 2003 tour bootleg tee with the best faded wash and vintag…
+  try 3: completed — fit card 324 chars
+[1] parse_query
+      in:  vintage graphic tee under $30
+      out: {'description': 'vintage graphic tee', 'size': None, 'max_price': 30.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'vintage graphic tee', 'size': None, 'max_price': 30.0}
+      out: 10 items: Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey, Y2K Baby Tee — Butterfly Print … +7 more
+      →    branch: results, continuing
+[3] select_item
+      in:  10 results
+      out: Graphic Tee — 2003 Tour Bootleg Style ($24.0, depop)
+      →    first result
+[4] suggest_outfit
+      in:  new_item=lst_006 'Graphic Tee — 2003 Tour Bootleg Style' ($24.0), wardrobe=10 items
+      out: [lst_006 · $24.0] Here are 2 specific outfit suggestions combining your new 2003 tour bootleg graphic tee with…
+[5] create_fit_card
+      in:  new_item=lst_006 'Graphic Tee — 2003 Tour Bootleg Style' ($24.0), outfit=<suggest_outfit text>
+      out: [lst_006 · $24.0] Scored this ultimate 2003 tour bootleg graphic tee on Depop for just $24, and the worn-in vi…
+  try 4: completed — fit card 254 chars
+[1] parse_query
+      in:  vintage graphic tee under $30
+      out: {'description': 'vintage graphic tee', 'size': None, 'max_price': 30.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'vintage graphic tee', 'size': None, 'max_price': 30.0}
+      out: 10 items: Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey, Y2K Baby Tee — Butterfly Print … +7 more
+      →    branch: results, continuing
+[3] select_item
+      in:  10 results
+      out: Graphic Tee — 2003 Tour Bootleg Style ($24.0, depop)
+      →    first result
+[4] suggest_outfit
+      in:  new_item=lst_006 'Graphic Tee — 2003 Tour Bootleg Style' ($24.0), wardrobe=10 items
+      out: [lst_006 · $24.0] Here are 2 specific outfit suggestions using your new graphic tee and items from your curren…
+[5] create_fit_card
+      in:  new_item=lst_006 'Graphic Tee — 2003 Tour Bootleg Style' ($24.0), outfit=<suggest_outfit text>
+      out: [lst_006 · $24.0] Scored this sick 2003 tour bootleg tee in pristine condition for just $24 over on Depop, and…
+  try 5: completed — fit card 359 chars
+
+impossible query stops early  (example wardrobe)
+  query: designer ballgown size XXS under $5
+[1] parse_query
+      in:  designer ballgown size XXS under $5
+      out: {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+      out: [] (empty)
+      →    branch: empty, stopping
+  try 1: stopped early — No items found matching 'designer ballgown' under $5.0 in si
+[1] parse_query
+      in:  designer ballgown size XXS under $5
+      out: {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+      out: [] (empty)
+      →    branch: empty, stopping
+  try 2: stopped early — No items found matching 'designer ballgown' under $5.0 in si
+[1] parse_query
+      in:  designer ballgown size XXS under $5
+      out: {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+      out: [] (empty)
+      →    branch: empty, stopping
+  try 3: stopped early — No items found matching 'designer ballgown' under $5.0 in si
+[1] parse_query
+      in:  designer ballgown size XXS under $5
+      out: {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+      out: [] (empty)
+      →    branch: empty, stopping
+  try 4: stopped early — No items found matching 'designer ballgown' under $5.0 in si
+[1] parse_query
+      in:  designer ballgown size XXS under $5
+      out: {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+      out: [] (empty)
+      →    branch: empty, stopping
+  try 5: stopped early — No items found matching 'designer ballgown' under $5.0 in si
+
+empty wardrobe  (empty wardrobe)
+  query: denim jacket under $50
+[1] parse_query
+      in:  denim jacket under $50
+      out: {'description': 'denim jacket', 'size': None, 'max_price': 50.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'denim jacket', 'size': None, 'max_price': 50.0}
+      out: 7 items: Denim Jacket — Light Wash, Cropped, 90s Track Jacket — Navy/White Stripe, High-Waisted Denim Shorts — Cutoff … +4 more
+      →    branch: results, continuing
+[3] select_item
+      in:  7 results
+      out: Denim Jacket — Light Wash, Cropped ($42.0, poshmark)
+      →    first result
+[4] suggest_outfit
+      in:  new_item=lst_007 'Denim Jacket — Light Wash, Cropped' ($42.0), wardrobe=0 items
+      out: [lst_007 · $42.0] Since this is your first wardrobe piece, you've scored a versatile gem! A cropped, light-was…
+[5] create_fit_card
+      in:  new_item=lst_007 'Denim Jacket — Light Wash, Cropped' ($42.0), outfit=<suggest_outfit text>
+      out: [lst_007 · $42.0] Scored this vintage light-wash cropped denim jacket in mint condition on Poshmark for just $…
+  try 1: completed — fit card 405 chars
+[1] parse_query
+      in:  denim jacket under $50
+      out: {'description': 'denim jacket', 'size': None, 'max_price': 50.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'denim jacket', 'size': None, 'max_price': 50.0}
+      out: 7 items: Denim Jacket — Light Wash, Cropped, 90s Track Jacket — Navy/White Stripe, High-Waisted Denim Shorts — Cutoff … +4 more
+      →    branch: results, continuing
+[3] select_item
+      in:  7 results
+      out: Denim Jacket — Light Wash, Cropped ($42.0, poshmark)
+      →    first result
+[4] suggest_outfit
+      in:  new_item=lst_007 'Denim Jacket — Light Wash, Cropped' ($42.0), wardrobe=0 items
+      out: [lst_007 · $42.0] That is a fantastic find—a vintage Wrangler light wash cropped denim jacket is a timeless st…
+[5] create_fit_card
+      in:  new_item=lst_007 'Denim Jacket — Light Wash, Cropped' ($42.0), outfit=<suggest_outfit text>
+      out: [lst_007 · $42.0] Score! Just scored this vintage Wrangler light wash cropped denim jacket in excellent condit…
+  try 2: completed — fit card 317 chars
+[1] parse_query
+      in:  denim jacket under $50
+      out: {'description': 'denim jacket', 'size': None, 'max_price': 50.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'denim jacket', 'size': None, 'max_price': 50.0}
+      out: 7 items: Denim Jacket — Light Wash, Cropped, 90s Track Jacket — Navy/White Stripe, High-Waisted Denim Shorts — Cutoff … +4 more
+      →    branch: results, continuing
+[3] select_item
+      in:  7 results
+      out: Denim Jacket — Light Wash, Cropped ($42.0, poshmark)
+      →    first result
+[4] suggest_outfit
+      in:  new_item=lst_007 'Denim Jacket — Light Wash, Cropped' ($42.0), wardrobe=0 items
+      out: [lst_007 · $42.0] That is a fantastic find—a vintage cropped Wrangler light wash jacket is a quintessential wa…
+[5] create_fit_card
+      in:  new_item=lst_007 'Denim Jacket — Light Wash, Cropped' ($42.0), outfit=<suggest_outfit text>
+      out: [lst_007 · $42.0] Scored this vintage cropped Wrangler light wash denim jacket in excellent condition, and hon…
+  try 3: completed — fit card 358 chars
+[1] parse_query
+      in:  denim jacket under $50
+      out: {'description': 'denim jacket', 'size': None, 'max_price': 50.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'denim jacket', 'size': None, 'max_price': 50.0}
+      out: 7 items: Denim Jacket — Light Wash, Cropped, 90s Track Jacket — Navy/White Stripe, High-Waisted Denim Shorts — Cutoff … +4 more
+      →    branch: results, continuing
+[3] select_item
+      in:  7 results
+      out: Denim Jacket — Light Wash, Cropped ($42.0, poshmark)
+      →    first result
+[4] suggest_outfit
+      in:  new_item=lst_007 'Denim Jacket — Light Wash, Cropped' ($42.0), wardrobe=0 items
+      out: [lst_007 · $42.0] Great find! A vintage cropped Wrangler denim jacket in a light wash is an absolute wardrobe …
+[5] create_fit_card
+      in:  new_item=lst_007 'Denim Jacket — Light Wash, Cropped' ($42.0), outfit=<suggest_outfit text>
+      out: [lst_007 · $42.0] Scored this vintage cropped Wrangler denim jacket in the best light wash ever for just $42 o…
+  try 4: completed — fit card 349 chars
+[1] parse_query
+      in:  denim jacket under $50
+      out: {'description': 'denim jacket', 'size': None, 'max_price': 50.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'denim jacket', 'size': None, 'max_price': 50.0}
+      out: 7 items: Denim Jacket — Light Wash, Cropped, 90s Track Jacket — Navy/White Stripe, High-Waisted Denim Shorts — Cutoff … +4 more
+      →    branch: results, continuing
+[3] select_item
+      in:  7 results
+      out: Denim Jacket — Light Wash, Cropped ($42.0, poshmark)
+      →    first result
+[4] suggest_outfit
+      in:  new_item=lst_007 'Denim Jacket — Light Wash, Cropped' ($42.0), wardrobe=0 items
+      out: [lst_007 · $42.0] Score! A vintage cropped light-wash Wrangler jacket is a foundational streetwear and classic…
+[5] create_fit_card
+      in:  new_item=lst_007 'Denim Jacket — Light Wash, Cropped' ($42.0), outfit=<suggest_outfit text>
+      out: [lst_007 · $42.0] Scored the ultimate vintage Wrangler light-wash denim jacket for just $42 over on Poshmark! …
+  try 5: completed — fit card 389 chars
+
+Wrote results/run_2026-11-18_0300_capstone_runs_after_fix_run1.md
+22 model calls this session, 6438 prompt + 4822 output tokens
+
+Commit this file. It's the evidence the test actually happened.
+
+[stderr]
+  [rate limit] service pushed back. Waiting 16s (attempt 1 of 5). This is the limiter doing its job, not a bug.
+  [rate limit] 15 requests used this minute. Waiting 14s. This is normal.
+  [rate limit] service pushed back. Waiting 34s (attempt 1 of 5). This is the limiter doing its job, not a bug.
+
+[exit code 0]

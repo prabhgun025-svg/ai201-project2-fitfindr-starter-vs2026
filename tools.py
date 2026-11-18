@@ -25,6 +25,7 @@ the description has to say what is *in* the list.
 import hashlib
 import json
 import math
+import re
 
 import config  # noqa: F401 — you'll use this in search_listings
 from generate import embed, generate
@@ -85,27 +86,30 @@ def search_listings(
         python -c "from tools import search_listings; print(search_listings('graphic tee', max_price=30))"
     """
     listings = load_listings()
-    
-    # Normalize the search description into keywords
-    query_keywords = set(description.lower().split())
-    
+
+    # Normalize the search description into keywords: whole words, minus
+    # filler words that say nothing about the item (see _STOPWORDS).
+    query_keywords = set(_words(description)) - _STOPWORDS
+
     # Filter by price and size, score by keyword overlap
     candidates = []
     for listing in listings:
         if not _passes_filters(listing, size, max_price):
             continue
 
-        # Score by keyword overlap with title and description
-        title_text = (listing.get("title") or "").lower()
-        desc_text = (listing.get("description") or "").lower()
+        # Score by keyword overlap with title and description. Both are
+        # compared word by word: a keyword must BE a word in the text, not
+        # just appear inside one ("me" no longer matches "medium").
+        title_words = set(_words(listing.get("title") or ""))
+        desc_words = set(_words(listing.get("description") or ""))
         style_tags = [tag.lower() for tag in (listing.get("style_tags") or [])]
-        
+
         # Count matching keywords
         overlap = 0
         for keyword in query_keywords:
-            if keyword in title_text.split():
+            if keyword in title_words:
                 overlap += 2  # weight title matches higher
-            elif keyword in desc_text:
+            elif keyword in desc_words:
                 overlap += 1
             elif keyword in style_tags:
                 overlap += 1.5
@@ -118,6 +122,26 @@ def search_listings(
     results = [listing for _, listing in candidates[:config.SEARCH_RESULT_LIMIT]]
     
     return results
+
+
+# Capstone improvement: keyword search used to test `keyword in description`
+# as a substring, so "me" matched "medium", "car" matched "cardigan", and "a"
+# matched every listing. Off-topic queries therefore never came back empty and
+# never reached the embedding fallback (criterion C3). Matching is now
+# whole-word, and these filler words are dropped from the query first: they
+# appear as real words in many descriptions ("a" in 18, "to" in 5) without
+# saying anything about the item.
+_STOPWORDS = frozenset("""
+    a an the and or but to for of in on at by with from into about as
+    is are was be it its this that these those
+    i i'm im me my you your we our how what where when which who
+    some any just very so
+""".split())
+
+
+def _words(text: str) -> list[str]:
+    """Lower-case words in a piece of text, keeping apostrophes ("levi's")."""
+    return re.findall(r"[a-z0-9']+", text.lower())
 
 
 def _passes_filters(listing: dict, size: str | None, max_price: float | None) -> bool:

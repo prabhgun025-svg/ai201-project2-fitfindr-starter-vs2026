@@ -1,0 +1,547 @@
+C2: sorting candidates by keyword result (no model calls)…
+[1] parse_query
+      in:  chelsea boots
+      out: {'description': 'chelsea boots', 'size': None, 'max_price': None}
+[2] parse_query
+      in:  denim jacket under $50
+      out: {'description': 'denim jacket', 'size': None, 'max_price': 50.0}
+[3] parse_query
+      in:  cargo pants
+      out: {'description': 'cargo pants', 'size': None, 'max_price': None}
+[4] parse_query
+      in:  graphic tee
+      out: {'description': 'graphic tee', 'size': None, 'max_price': None}
+[5] parse_query
+      in:  leather belt
+      out: {'description': 'leather belt', 'size': None, 'max_price': None}
+[6] parse_query
+      in:  slip dress
+      out: {'description': 'slip dress', 'size': None, 'max_price': None}
+[7] parse_query
+      in:  tees
+      out: {'description': 'tees', 'size': None, 'max_price': None}
+[8] parse_query
+      in:  hoodies
+      out: {'description': 'hoodies', 'size': None, 'max_price': None}
+[9] parse_query
+      in:  dresses
+      out: {'description': 'dresses', 'size': None, 'max_price': None}
+[10] parse_query
+      in:  blazers
+      out: {'description': 'blazers', 'size': None, 'max_price': None}
+[11] parse_query
+      in:  belts
+      out: {'description': 'belts', 'size': None, 'max_price': None}
+[12] parse_query
+      in:  purse
+      out: {'description': 'purse', 'size': None, 'max_price': None}
+[13] parse_query
+      in:  trainers
+      out: {'description': 'trainers', 'size': None, 'max_price': None}
+[14] parse_query
+      in:  headwear
+      out: {'description': 'headwear', 'size': None, 'max_price': None}
+[15] parse_query
+      in:  sweater
+      out: {'description': 'sweater', 'size': None, 'max_price': None}
+[16] parse_query
+      in:  jorts
+      out: {'description': 'jorts', 'size': None, 'max_price': None}
+[17] parse_query
+      in:  windbreakers
+      out: {'description': 'windbreakers', 'size': None, 'max_price': None}
+[18] parse_query
+      in:  flannels
+      out: {'description': 'flannels', 'size': None, 'max_price': None}
+[1] parse_query
+      in:  chelsea boots
+      out: {'description': 'chelsea boots', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'chelsea boots', 'size': None, 'max_price': None}
+      out: 1 items: Suede Chelsea Boots — Tan
+      →    branch: results, continuing
+[3] select_item
+      in:  1 results
+      out: Suede Chelsea Boots — Tan ($44.0, poshmark)
+      →    first result
+[4] suggest_outfit
+      in:  new_item=lst_028 'Suede Chelsea Boots — Tan' ($44.0), wardrobe=10 items
+      out: [lst_028 · $44.0] Here are two specific outfit suggestions that blend the vintage, western, and earth-tone vib…
+[5] create_fit_card
+      in:  new_item=lst_028 'Suede Chelsea Boots — Tan' ($44.0), outfit=<suggest_outfit text>
+      out: [lst_028 · $44.0] Scored these gorgeous tan suede Chelsea boots in fair condition on Poshmark for just $44, an…
+  C2 'chelsea boots': keyword results → keyword PASS
+[1] parse_query
+      in:  denim jacket under $50
+      out: {'description': 'denim jacket', 'size': None, 'max_price': 50.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'denim jacket', 'size': None, 'max_price': 50.0}
+      out: 7 items: Denim Jacket — Light Wash, Cropped, 90s Track Jacket — Navy/White Stripe, High-Waisted Denim Shorts — Cutoff … +4 more
+      →    branch: results, continuing
+[3] select_item
+      in:  7 results
+      out: Denim Jacket — Light Wash, Cropped ($42.0, poshmark)
+      →    first result
+[4] suggest_outfit
+      in:  new_item=lst_007 'Denim Jacket — Light Wash, Cropped' ($42.0), wardrobe=10 items
+      out: [lst_007 · $42.0] Here are 2 outfit suggestions that combine your new Wrangler cropped light wash denim jacket…
+[5] create_fit_card
+      in:  new_item=lst_007 'Denim Jacket — Light Wash, Cropped' ($42.0), outfit=<suggest_outfit text>
+      out: [lst_007 · $42.0] Scored this vintage Wrangler cropped light wash denim jacket in pristine condition for just …
+  C2 'denim jacket under $50': keyword results → keyword PASS
+[1] parse_query
+      in:  cargo pants
+      out: {'description': 'cargo pants', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'cargo pants', 'size': None, 'max_price': None}
+      out: 2 items: Low-Rise Cargo Pants — Khaki, Corduroy Wide-Leg Pants — Rust
+      →    branch: results, continuing
+[3] select_item
+      in:  2 results
+      out: Low-Rise Cargo Pants — Khaki ($27.0, poshmark)
+      →    first result
+[4] suggest_outfit
+      in:  new_item=lst_011 'Low-Rise Cargo Pants — Khaki' ($27.0), wardrobe=10 items
+      out: [lst_011 · $27.0] Here are two specific outfit suggestions that incorporate the new Y2K khaki cargo pants into…
+[5] create_fit_card
+      in:  new_item=lst_011 'Low-Rise Cargo Pants — Khaki' ($27.0), outfit=<suggest_outfit text>
+      out: [lst_011 · $27.0] Scored these fair-condition Y2K khaki cargo pants on Poshmark for just $27, and I am officia…
+  C2 'cargo pants': keyword results → keyword PASS
+[1] parse_query
+      in:  graphic tee
+      out: {'description': 'graphic tee', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'graphic tee', 'size': None, 'max_price': None}
+      out: 6 items: Graphic Tee — 2003 Tour Bootleg Style, Y2K Baby Tee — Butterfly Print, Vintage Band Tee — Faded Grey … +3 more
+      →    branch: results, continuing
+[3] select_item
+      in:  6 results
+      out: Graphic Tee — 2003 Tour Bootleg Style ($24.0, depop)
+      →    first result
+[4] suggest_outfit
+      in:  new_item=lst_006 'Graphic Tee — 2003 Tour Bootleg Style' ($24.0), wardrobe=10 items
+      out: [lst_006 · $24.0] Here are 2 specific outfit suggestions using your new graphic tee and items from your wardro…
+[5] create_fit_card
+      in:  new_item=lst_006 'Graphic Tee — 2003 Tour Bootleg Style' ($24.0), outfit=<suggest_outfit text>
+      out: [lst_006 · $24.0] Found the holy grail: this sick 2003 tour bootleg tee with the best faded wash and graphics.…
+  C2 'graphic tee': keyword results → keyword PASS
+[1] parse_query
+      in:  leather belt
+      out: {'description': 'leather belt', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'leather belt', 'size': None, 'max_price': None}
+      out: 4 items: Leather Belt — Brown, Braided, 90s Leather Bomber — Black, Mini Shoulder Bag — Tan Leather … +1 more
+      →    branch: results, continuing
+[3] select_item
+      in:  4 results
+      out: Leather Belt — Brown, Braided ($12.0, thredUp)
+      →    first result
+[4] suggest_outfit
+      in:  new_item=lst_014 'Leather Belt — Brown, Braided' ($12.0), wardrobe=10 items
+      out: [lst_014 · $12.0] Here are 2 specific outfit suggestions incorporating your new brown braided leather belt wit…
+[5] create_fit_card
+      in:  new_item=lst_014 'Leather Belt — Brown, Braided' ($12.0), outfit=<suggest_outfit text>
+      out: [lst_014 · $12.0] Scored this amazing braided brown leather belt on thredUp for just $12 in literally pristine…
+  C2 'leather belt': keyword results → keyword PASS
+[1] parse_query
+      in:  tees
+      out: {'description': 'tees', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'tees', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'tees', 'size': None, 'max_price': None}
+      out: 10 items: Vintage Band Tee — Faded Grey, Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style … +7 more
+      →    branch: results, continuing
+[4] select_item
+      in:  10 results
+      out: Vintage Band Tee — Faded Grey ($19.0, depop)
+      →    first result
+[5] suggest_outfit
+      in:  new_item=lst_033 'Vintage Band Tee — Faded Grey' ($19.0), wardrobe=10 items
+      out: [lst_033 · $19.0] Here are two specific outfit suggestions that blend the grunge, vintage vibe of your new ban…
+[6] create_fit_card
+      in:  new_item=lst_033 'Vintage Band Tee — Faded Grey' ($19.0), outfit=<suggest_outfit text>
+      out: [lst_033 · $19.0] Nothing beats the authentic fade on a true vintage band tee—the kind you just can't fake. Sn…
+  C2 'tees': keyword empty → embedding PASS
+[1] parse_query
+      in:  hoodies
+      out: {'description': 'hoodies', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'hoodies', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'hoodies', 'size': None, 'max_price': None}
+      out: 10 items: Vintage Graphic Hoodie — Faded Black, Tie-Dye Long Sleeve — Pastel, Oversized College Crewneck — Faded Red … +7 more
+      →    branch: results, continuing
+[4] select_item
+      in:  10 results
+      out: Vintage Graphic Hoodie — Faded Black ($26.0, depop)
+      →    first result
+[5] suggest_outfit
+      in:  new_item=lst_015 'Vintage Graphic Hoodie — Faded Black' ($26.0), wardrobe=10 items
+      out: [lst_015 · $26.0] Here are 2 specific outfit suggestions using the vintage graphic hoodie and items from your …
+[6] create_fit_card
+      in:  new_item=lst_015 'Vintage Graphic Hoodie — Faded Black' ($26.0), outfit=<suggest_outfit text>
+      out: [lst_015 · $26.0] Scored this perfectly faded vintage graphic hoodie on Depop for just $26 and I am never taki…
+  C2 'hoodies': keyword empty → embedding PASS
+[1] parse_query
+      in:  dresses
+      out: {'description': 'dresses', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'dresses', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'dresses', 'size': None, 'max_price': None}
+      out: 10 items: 90s Silk Slip Dress — Floral, Midi Length, Silk Button-Down — Sage Green, Velvet Blazer — Emerald Green … +7 more
+      →    branch: results, continuing
+[4] select_item
+      in:  10 results
+      out: 90s Silk Slip Dress — Floral, Midi Length ($30.0, depop)
+      →    first result
+[5] suggest_outfit
+      in:  new_item=lst_013 '90s Silk Slip Dress — Floral, Midi Length' ($30.0), wardrobe=10 items
+      out: [lst_013 · $30.0] Here are two outfit suggestions that contrast the ultra-feminine, delicate vibe of the 90s s…
+[6] create_fit_card
+      in:  new_item=lst_013 '90s Silk Slip Dress — Floral, Midi Length' ($30.0), outfit=<suggest_outfit text>
+      out: [lst_013 · $30.0] Found the ultimate 90s supermodel-off-duty slip dress and I'm obsessed with this floral prin…
+  C2 'dresses': keyword empty → embedding PASS
+[1] parse_query
+      in:  blazers
+      out: {'description': 'blazers', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'blazers', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'blazers', 'size': None, 'max_price': None}
+      out: 10 items: Vintage Linen Blazer — Cream, Velvet Blazer — Emerald Green, Silk Button-Down — Sage Green … +7 more
+      →    branch: results, continuing
+[4] select_item
+      in:  10 results
+      out: Vintage Linen Blazer — Cream ($38.0, thredUp)
+      →    first result
+[5] suggest_outfit
+      in:  new_item=lst_018 'Vintage Linen Blazer — Cream' ($38.0), wardrobe=10 items
+      out: [lst_018 · $38.0] Here are two distinct outfit suggestions that blend the vintage, minimal, and cottagecore vi…
+[6] create_fit_card
+      in:  new_item=lst_018 'Vintage Linen Blazer — Cream' ($38.0), outfit=<suggest_outfit text>
+      out: [lst_018 · $38.0] Scored this vintage cream linen blazer on thredUp for just $38 and I am officially obsessed …
+  C2 'blazers': keyword empty → embedding PASS
+[1] parse_query
+      in:  belts
+      out: {'description': 'belts', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'belts', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'belts', 'size': None, 'max_price': None}
+      out: 10 items: Leather Belt — Brown, Braided, Baggy Carpenter Jeans — Dark Wash, Corduroy Wide-Leg Pants — Rust … +7 more
+      →    branch: results, continuing
+[4] select_item
+      in:  10 results
+      out: Leather Belt — Brown, Braided ($12.0, thredUp)
+      →    first result
+[5] suggest_outfit
+      in:  new_item=lst_014 'Leather Belt — Brown, Braided' ($12.0), wardrobe=10 items
+      out: [lst_014 · $12.0] Here are two outfit suggestions that combine your new brown braided belt with items from you…
+[6] create_fit_card
+      in:  new_item=lst_014 'Leather Belt — Brown, Braided' ($12.0), outfit=<suggest_outfit text>
+      out: [lst_014 · $12.0] Score of the century on thredUp! 🤌 Found this gorgeous vintage brown braided leather belt in…
+  C2 'belts': keyword empty → embedding PASS
+[1] parse_query
+      in:  airline ticket refund
+      out: {'description': 'airline ticket refund', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'airline ticket refund', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'airline ticket refund', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, stopping
+  C3 'airline ticket refund': direct 0 listings, agent no_results with 0 calls → PASS
+[1] parse_query
+      in:  how to change a car tire
+      out: {'description': 'how to change a car tire', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'how to change a car tire', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'how to change a car tire', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, stopping
+  C3 'how to change a car tire': direct 0 listings, agent no_results with 0 calls → PASS
+[1] parse_query
+      in:  python list comprehension
+      out: {'description': 'python list comprehension', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'python list comprehension', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'python list comprehension', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, stopping
+  C3 'python list comprehension': direct 0 listings, agent no_results with 0 calls → PASS
+[1] parse_query
+      in:  pizza delivery near me
+      out: {'description': 'pizza delivery near me', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'pizza delivery near me', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'pizza delivery near me', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, stopping
+  C3 'pizza delivery near me': direct 0 listings, agent no_results with 0 calls → PASS
+[1] parse_query
+      in:  mortgage interest rates
+      out: {'description': 'mortgage interest rates', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'mortgage interest rates', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'mortgage interest rates', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, stopping
+  C3 'mortgage interest rates': direct 0 listings, agent no_results with 0 calls → PASS
+[1] parse_query
+      in:  tees
+      out: {'description': 'tees', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'tees', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'tees', 'size': None, 'max_price': None}
+      out: 10 items: Vintage Band Tee — Faded Grey, Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style … +7 more
+      →    branch: results, continuing
+[4] select_item
+      in:  10 results
+      out: Vintage Band Tee — Faded Grey ($19.0, depop)
+      →    first result
+[5] suggest_outfit
+      in:  new_item=lst_033 'Vintage Band Tee — Faded Grey' ($19.0), wardrobe=10 items
+      out: [lst_033 · $19.0] Here are two specific outfit suggestions that blend the grunge, vintage aesthetic of your ne…
+[6] create_fit_card
+      in:  new_item=lst_033 'Vintage Band Tee — Faded Grey' ($19.0), outfit=<suggest_outfit text>
+      out: [lst_033 · $19.0] Scored the ultimate faded grey vintage band tee on Depop for just $19, and the wear on this …
+  C4 'tees': selected lst_033 → PASS
+[1] parse_query
+      in:  hoodies
+      out: {'description': 'hoodies', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'hoodies', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'hoodies', 'size': None, 'max_price': None}
+      out: 10 items: Vintage Graphic Hoodie — Faded Black, Tie-Dye Long Sleeve — Pastel, Oversized College Crewneck — Faded Red … +7 more
+      →    branch: results, continuing
+[4] select_item
+      in:  10 results
+      out: Vintage Graphic Hoodie — Faded Black ($26.0, depop)
+      →    first result
+[5] suggest_outfit
+      in:  new_item=lst_015 'Vintage Graphic Hoodie — Faded Black' ($26.0), wardrobe=10 items
+      out: [lst_015 · $26.0] Here are two specific outfit suggestions combining your new vintage graphic hoodie with piec…
+[6] create_fit_card
+      in:  new_item=lst_015 'Vintage Graphic Hoodie — Faded Black' ($26.0), outfit=<suggest_outfit text>
+      out: [lst_015 · $26.0] Score! Snagged this perfectly faded black vintage graphic hoodie on Depop for just $26. It’s…
+  C4 'hoodies': selected lst_015 → PASS
+[1] parse_query
+      in:  dresses
+      out: {'description': 'dresses', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'dresses', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'dresses', 'size': None, 'max_price': None}
+      out: 10 items: 90s Silk Slip Dress — Floral, Midi Length, Silk Button-Down — Sage Green, Velvet Blazer — Emerald Green … +7 more
+      →    branch: results, continuing
+[4] select_item
+      in:  10 results
+      out: 90s Silk Slip Dress — Floral, Midi Length ($30.0, depop)
+      →    first result
+[5] suggest_outfit
+      in:  new_item=lst_013 '90s Silk Slip Dress — Floral, Midi Length' ($30.0), wardrobe=10 items
+      out: [lst_013 · $30.0] For $30, a 90s silk slip dress is an incredible find—especially given its versatility. The k…
+[6] create_fit_card
+      in:  new_item=lst_013 '90s Silk Slip Dress — Floral, Midi Length' ($30.0), outfit=<suggest_outfit text>
+      out: [lst_013 · $30.0] Scored the ultimate 90s floral midi slip dress on Depop for just $30! 🌸✨ The silk is in such…
+  C4 'dresses': selected lst_013 → PASS
+[1] parse_query
+      in:  blazers
+      out: {'description': 'blazers', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'blazers', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'blazers', 'size': None, 'max_price': None}
+      out: 10 items: Vintage Linen Blazer — Cream, Velvet Blazer — Emerald Green, Silk Button-Down — Sage Green … +7 more
+      →    branch: results, continuing
+[4] select_item
+      in:  10 results
+      out: Vintage Linen Blazer — Cream ($38.0, thredUp)
+      →    first result
+[5] suggest_outfit
+      in:  new_item=lst_018 'Vintage Linen Blazer — Cream' ($38.0), wardrobe=10 items
+      out: [lst_018 · $38.0] Here are two distinct outfit suggestions that blend the vintage, cottagecore minimalism of y…
+[6] create_fit_card
+      in:  new_item=lst_018 'Vintage Linen Blazer — Cream' ($38.0), outfit=<suggest_outfit text>
+      out: [lst_018 · $38.0] Scored this gorgeous vintage cream linen blazer on thredUp for just $38 in pristine conditio…
+  C4 'blazers': selected lst_018 → PASS
+[1] parse_query
+      in:  belts
+      out: {'description': 'belts', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'belts', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'belts', 'size': None, 'max_price': None}
+      out: 10 items: Leather Belt — Brown, Braided, Baggy Carpenter Jeans — Dark Wash, Corduroy Wide-Leg Pants — Rust … +7 more
+      →    branch: results, continuing
+[4] select_item
+      in:  10 results
+      out: Leather Belt — Brown, Braided ($12.0, thredUp)
+      →    first result
+[5] suggest_outfit
+      in:  new_item=lst_014 'Leather Belt — Brown, Braided' ($12.0), wardrobe=10 items
+      out: [lst_014 · $12.0] Here are two specific outfit suggestions that blend your new brown braided leather belt with…
+[6] create_fit_card
+      in:  new_item=lst_014 'Leather Belt — Brown, Braided' ($12.0), outfit=<suggest_outfit text>
+      out: [lst_014 · $12.0] Scored this gorgeous vintage brown braided leather belt on thredUp for just $12 in pristine …
+  C4 'belts': selected lst_014 → PASS
+[1] parse_query
+      in:  denim pants
+      out: {'description': 'denim pants', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'denim pants', 'size': None, 'max_price': None}
+      out: 7 items: Corduroy Wide-Leg Pants — Rust, Denim Jacket — Light Wash, Cropped, Low-Rise Cargo Pants — Khaki … +4 more
+      →    branch: results, continuing
+[3] select_item
+      in:  7 results
+      out: Corduroy Wide-Leg Pants — Rust ($32.0, depop)
+      →    first result
+[4] suggest_outfit
+      in:  new_item=lst_005 'Corduroy Wide-Leg Pants — Rust' ($32.0), wardrobe=10 items
+      out: [lst_005 · $32.0] Here are two specific outfit suggestions combining your new rust corduroy pants with items a…
+[5] create_fit_card
+      in:  new_item=lst_005 'Corduroy Wide-Leg Pants — Rust' ($32.0), outfit=<suggest_outfit text>
+      out: [lst_005 · $32.0] Found the ultimate 70s dream pants on Depop for just $32 and I’m never taking them off! 🍂✨ T…
+  C4 'denim pants': selected lst_005 → FAIL
+[1] parse_query
+      in:  sweater
+      out: {'description': 'sweater', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'sweater', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'sweater', 'size': None, 'max_price': None}
+      out: 10 items: Knit Cardigan — Chunky Brown, Oversized College Crewneck — Faded Red, Tie-Dye Long Sleeve — Pastel … +7 more
+      →    branch: results, continuing
+[4] select_item
+      in:  10 results
+      out: Knit Cardigan — Chunky Brown ($35.0, depop)
+      →    first result
+[5] suggest_outfit
+      in:  new_item=lst_008 'Knit Cardigan — Chunky Brown' ($35.0), wardrobe=10 items
+      out: [lst_008 · $35.0] Here are two specific outfit suggestions that combine your new chunky brown cardigan with it…
+[6] create_fit_card
+      in:  new_item=lst_008 'Knit Cardigan — Chunky Brown' ($35.0), outfit=<suggest_outfit text>
+      out: [lst_008 · $35.0] Scored this gorgeous chunky brown knit cardigan in pristine condition for just $35 over on D…
+  C4 'sweater': selected lst_008 → PASS
+[1] parse_query
+      in:  purse
+      out: {'description': 'purse', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'purse', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'purse', 'size': None, 'max_price': None}
+      out: 6 items: Mini Shoulder Bag — Tan Leather, Bucket Hat — Reversible, Brown Plaid, Tie-Dye Long Sleeve — Pastel … +3 more
+      →    branch: results, continuing
+[4] select_item
+      in:  6 results
+      out: Mini Shoulder Bag — Tan Leather ($38.0, poshmark)
+      →    first result
+[5] suggest_outfit
+      in:  new_item=lst_039 'Mini Shoulder Bag — Tan Leather' ($38.0), wardrobe=10 items
+      out: [lst_039 · $38.0] Here are two specific outfit suggestions that incorporate your new tan leather mini shoulder…
+[6] create_fit_card
+      in:  new_item=lst_039 'Mini Shoulder Bag — Tan Leather' ($38.0), outfit=<suggest_outfit text>
+      out: [lst_039 · $38.0] Scored this gorgeous vintage tan leather mini shoulder bag in pristine condition on Poshmark…
+  C4 'purse': selected lst_039 → PASS
+[1] parse_query
+      in:  trainers
+      out: {'description': 'trainers', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'trainers', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'trainers', 'size': None, 'max_price': None}
+      out: 7 items: Platform Sneakers — White Chunky Sole, Platform Mary Janes — Black Patent, Wide-Leg Linen Trousers — Natural … +4 more
+      →    branch: results, continuing
+[4] select_item
+      in:  7 results
+      out: Platform Sneakers — White Chunky Sole ($48.0, poshmark)
+      →    first result
+[5] suggest_outfit
+      in:  new_item=lst_019 'Platform Sneakers — White Chunky Sole' ($48.0), wardrobe=10 items
+      out: [lst_019 · $48.0] Here are two outfit suggestions that seamlessly integrate the new white chunky platform snea…
+[6] create_fit_card
+      in:  new_item=lst_019 'Platform Sneakers — White Chunky Sole' ($48.0), outfit=<suggest_outfit text>
+      out: [lst_019 · $48.0] Found my ultimate 90s model off-duty shoe for just $48 on Poshmark! These white chunky platf…
+  C4 'trainers': selected lst_019 → PASS
+[1] parse_query
+      in:  headwear
+      out: {'description': 'headwear', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'headwear', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'headwear', 'size': None, 'max_price': None}
+      out: 10 items: Bucket Hat — Reversible, Brown Plaid, Crochet Halter Top — Cream, Biker Shorts — Black, Shiny … +7 more
+      →    branch: results, continuing
+[4] select_item
+      in:  10 results
+      out: Bucket Hat — Reversible, Brown Plaid ($14.0, thredUp)
+      →    first result
+[5] suggest_outfit
+      in:  new_item=lst_034 'Bucket Hat — Reversible, Brown Plaid' ($14.0), wardrobe=10 items
+      out: [lst_034 · $14.0] Here are two 90s streetwear-inspired outfit suggestions using your new bucket hat and existi…
+[6] create_fit_card
+      in:  new_item=lst_034 'Bucket Hat — Reversible, Brown Plaid' ($14.0), outfit=<suggest_outfit text>
+      out: [lst_034 · $14.0] Scored this amazing reversible brown plaid bucket hat on thredUp for just $14 in pristine co…
+  C4 'headwear': selected lst_034 → PASS
+
+C2 10/10   C3 5/5   C4 9/10
+Wrote results/capstone_criteria_2026-11-18_0307.md
+
+[stderr]
+  [rate limit] service pushed back. Waiting 12s (attempt 1 of 5). This is the limiter doing its job, not a bug.
+  [rate limit] 15 requests used this minute. Waiting 25s. This is normal.
+  [rate limit] 15 requests used this minute. Waiting 7s. This is normal.
+  [rate limit] 15 requests used this minute. Waiting 23s. This is normal.
+  [rate limit] 15 requests used this minute. Waiting 1s. This is normal.
+  [rate limit] 15 requests used this minute. Waiting 1s. This is normal.
+  [rate limit] 15 requests used this minute. Waiting 4s. This is normal.
+  [rate limit] 15 requests used this minute. Waiting 1s. This is normal.
+  [rate limit] 15 requests used this minute. Waiting 24s. This is normal.
+
+[exit code 0]
