@@ -60,6 +60,7 @@ works with a direct call, and **a documented failure earns the point in full.**
 from mcp.server.fastmcp import FastMCP
 
 from tools import search_listings as _search_listings_impl  # noqa: F401 — you'll use this below
+from tools import semantic_search_listings as _semantic_search_impl
 
 # log_level="WARNING" keeps the server from printing an INFO line for every
 # request. Without it your terminal fills with "Processing request of type
@@ -87,6 +88,31 @@ def search_listings(
     nothing matches. It never returns null and never raises an error for no results.
     """
     return _search_listings_impl(description, size, max_price)
+
+
+# ── semantic_search_listings (capstone) ───────────────────────────────────────
+
+@mcp.tool()
+def semantic_search_listings(
+    description: str,
+    size: str | None = None,
+    max_price: float | None = None,
+) -> list[dict]:
+    """
+    Search secondhand clothing listings by meaning rather than exact words, with the
+    same optional size and price filters as search_listings.
+
+    Use it when search_listings returns [] for wording that should have matched, such
+    as plurals ("tees") or synonyms ("purse" for a shoulder bag).
+    Inputs: `description` (str, required) is free text in the shopper's own words.
+    `size` (str, optional) is a size label like "M" or "W30", matched case-insensitively.
+    `max_price` (float, optional) is the highest price allowed, in US dollars, inclusive.
+    Returns up to 10 listing dicts, most similar first, with exactly the same keys as
+    search_listings. Returns an empty list [] when the filters rule everything out or
+    no listing is similar enough to count as a match. Raises an error only when the
+    embedding model can't be reached (for example, a bad API key).
+    """
+    return _semantic_search_impl(description, size, max_price)
 
 # ──────────────────────────────────────────────────────────────────────────────
 #

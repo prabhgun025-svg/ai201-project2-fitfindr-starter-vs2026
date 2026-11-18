@@ -15,7 +15,8 @@ Build and test your three tools in `tools.py` first. Then come here.
 
 import config
 import trace
-from tools import search_listings, suggest_outfit, create_fit_card
+from tools import suggest_outfit, create_fit_card
+from mcp_client import call_tool, MCPError
 from generate import ModelUnavailable
 
 
@@ -39,6 +40,7 @@ def new_session(query: str, wardrobe: dict) -> dict:
         "query": query,              # what the user typed
         "parsed": {},                # description / size / max_price you pulled out of it
         "search_results": [],        # everything search_listings returned
+        "search_strategy": None,     # "keyword", or "embedding" if the fallback ran
         "selected_item": None,       # the one you chose — goes into suggest_outfit
         "wardrobe": wardrobe,        # the user's wardrobe
         "outfit_suggestion": None,   # what suggest_outfit returned
@@ -134,30 +136,88 @@ def run_agent(query: str, wardrobe: dict) -> dict:
         "size": size,
         "max_price": max_price,
     }
+    trace.step("parse_query", inputs=query, returned=str(session["parsed"]))
     
-    # Call search_listings
-    search_results = search_listings(description, size=size, max_price=max_price)
+    # Call search_listings over MCP
+    search_results = call_tool("search_listings", {
+        "description": description,
+        "size": size,
+        "max_price": max_price,
+    })
     session["search_results"] = search_results
-    
-    # BRANCH: If search returns empty list, stop
+    session["search_strategy"] = "keyword"
+    fallback_note = None
+
+    # CAPSTONE BRANCH: keyword search found nothing, so try embedding search
+    # with the same filters before giving up. Keyword stays the default; this
+    # only runs on an empty result.
     if not search_results:
-        session["error"] = f"No items found matching '{description}'" + (f" under ${max_price}" if max_price else "") + (f" in size {size}" if size else "") + ". Try different keywords, a higher price, or removing size filters."
+        trace.step("search_listings (via MCP)", inputs=str(session["parsed"]),
+                   returned=search_results, note="branch: empty, trying embedding search")
+        try:
+            search_results = call_tool("semantic_search_listings", {
+                "description": description,
+                "size": size,
+                "max_price": max_price,
+            }) or []
+        except MCPError as exc:
+            # Embedding model unreachable: treat as no results rather than crash.
+            search_results = []
+            fallback_note = f"embedding search failed ({str(exc).splitlines()[0]})"
+        session["search_results"] = search_results
+        session["search_strategy"] = "embedding"
+        if search_results:
+            trace.step("semantic_search_listings (via MCP)", inputs=str(session["parsed"]),
+                       returned=search_results, note="branch: results, continuing")
+        else:
+            trace.step("semantic_search_listings (via MCP)", inputs=str(session["parsed"]),
+                       returned=fallback_note or search_results, note="branch: empty, stopping")
+
+    # BRANCH: If both searches return an empty list, stop
+    if not search_results:
+        why = (f"Keyword search found nothing and the meaning-based search couldn't run: {fallback_note}."
+               if fallback_note else "Neither keyword nor meaning-based search found a match.")
+        session["error"] = f"No items found matching '{description}'" + (f" under ${max_price}" if max_price else "") + (f" in size {size}" if size else "") + f". {why} Try different keywords, a higher price, or removing size filters."
         return session
+    if session["search_strategy"] == "keyword":
+        trace.step("search_listings (via MCP)", inputs=str(session["parsed"]),
+                   returned=search_results, note="branch: results, continuing")
     
     # Choose the first result and store in session
     selected_item = search_results[0]
     session["selected_item"] = selected_item
+    trace.step("select_item", inputs=f"{len(search_results)} results",
+               returned=selected_item, note="first result")
     
-    # Call suggest_outfit with the selected item from session
-    item_from_session = session["selected_item"]
-    outfit_suggestion = suggest_outfit(item_from_session, wardrobe)
-    session["outfit_suggestion"] = outfit_suggestion
-    
-    # Call create_fit_card, reading outfit from session
-    outfit_from_session = session["outfit_suggestion"]
-    item_for_card = session["selected_item"]
-    fit_card = create_fit_card(outfit_from_session, item_for_card)
-    session["fit_card"] = fit_card
+    try:
+        # Call suggest_outfit with the selected item from session
+        item_from_session = session["selected_item"]
+        outfit_suggestion = suggest_outfit(item_from_session, wardrobe)
+        session["outfit_suggestion"] = outfit_suggestion
+        trace.step("suggest_outfit",
+                   inputs=f"new_item={item_from_session.get('id')} {item_from_session.get('title')!r} "
+                          f"(${item_from_session.get('price')}), "
+                          f"wardrobe={len(wardrobe.get('items', []))} items",
+                   returned=outfit_suggestion)
+        
+        # Call create_fit_card, reading outfit from session
+        outfit_from_session = session["outfit_suggestion"]
+        item_for_card = session["selected_item"]
+        fit_card = create_fit_card(outfit_from_session, item_for_card)
+        session["fit_card"] = fit_card
+        trace.step("create_fit_card",
+                   inputs=f"new_item={item_for_card.get('id')} {item_for_card.get('title')!r} "
+                          f"(${item_for_card.get('price')}), outfit=<suggest_outfit text>",
+                   returned=fit_card)
+    except ModelUnavailable as exc:
+        # Keep the search result in the session; only the model steps failed.
+        session["error"] = (
+            f"Found {selected_item.get('title')} (${selected_item.get('price')} on "
+            f"{selected_item.get('platform')}), but couldn't reach the model to style it: {exc} "
+            f"Fix that and ask again."
+        )
+        trace.step("model call failed", returned=str(exc), note="ModelUnavailable, stopping")
+        return session
     
     return session
 
@@ -195,4 +255,3 @@ if __name__ == "__main__":
         "\nThe second one should stop before the fit card. If both paths look "
         "the same,\nthe branch isn't doing anything yet."
     )
-
