@@ -27,10 +27,11 @@ web server has to be. The reason is worth reading before you deploy: see the
 note above `_one_at_a_time` below — it also decides which gunicorn worker you
 can use.
 
-⚠️ There is deliberately NO logging, NO timing and NO request counting in this
-file. That is unit 9's follow-along: you instrument this yourself, first, and
-then deploy it. A structured log you were handed teaches you nothing about
-what belongs in one — and the timing field is the one everybody skips.
+Logging: every /ask run goes through `runlog.logged_run()`, which writes one
+JSON record per run (finished, stopped early, or crashed) to logs/runs.jsonl
+and echoes it to stdout, where Render's log viewer keeps it. Requests refused
+before the agent runs (no query, too long, over the visitor limit) are logged
+too. `GET /` serves the web page in static/index.html.
 """
 
 import os
@@ -41,12 +42,52 @@ import threading
 # and fixes the Windows console encoding for every module that imports it.
 import config  # noqa: F401
 
+import time
+from collections import defaultdict, deque
+
 from flask import Flask, jsonify, request
 
-from agent import run_agent
+from runlog import client_tag, log_rejected, logged_run
 from utils.data_loader import get_example_wardrobe
 
 app = Flask(__name__)
+
+
+# ── per-visitor limit ─────────────────────────────────────────────────────────
+# The site is public and every search spends the same Gemini key: 2-3 requests
+# against a free tier of 15 a minute. This caps each visitor at VISITOR_LIMIT
+# searches per VISITOR_WINDOW_S seconds, so one person (or one script) can't
+# use up everyone's quota. Refusals get a 429 and a log record.
+
+VISITOR_LIMIT = int(os.getenv("FITFINDR_VISITOR_LIMIT", "5"))
+VISITOR_WINDOW_S = 60.0
+_recent: dict[str, deque] = defaultdict(deque)
+_recent_lock = threading.Lock()
+
+
+def _client_address() -> str:
+    # Behind Render's proxy the visitor's address is the first X-Forwarded-For entry.
+    forwarded = request.headers.get("X-Forwarded-For", "")
+    return forwarded.split(",")[0].strip() or (request.remote_addr or "unknown")
+
+
+def _over_limit(client: str) -> float:
+    """0 if this client may run a search now, else seconds until it may."""
+    now = time.monotonic()
+    with _recent_lock:
+        stamps = _recent[client]
+        while stamps and now - stamps[0] >= VISITOR_WINDOW_S:
+            stamps.popleft()
+        if len(stamps) >= VISITOR_LIMIT:
+            return VISITOR_WINDOW_S - (now - stamps[0])
+        stamps.append(now)
+        return 0.0
+
+
+@app.get("/")
+def index():
+    """The web page: a search box that calls POST /ask."""
+    return app.send_static_file("index.html")
 
 
 # ── one request at a time ─────────────────────────────────────────────────────
@@ -107,12 +148,31 @@ def ask():
                                                 example wardrobe the CLI uses.
     Out:  the session dict from run_agent(), as JSON.
     """
-    payload = request.get_json(silent=True) or {}
-    query = (payload.get("query") or "").strip()
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        payload = {}
+    raw_query = payload.get("query")
+    query = (raw_query if isinstance(raw_query, str) else "").strip()
+    client = _client_address()
     if not query:
         # 400 rather than a stack trace: the caller can act on this one.
+        log_rejected(raw_query, "no query in request body", "http", client_tag(client), echo=True)
         return jsonify({"error": "Send JSON with a 'query' field, e.g. "
                                  '{"query": "vintage graphic tee under $30"}'}), 400
+
+    if len(query) > 300:
+        log_rejected(query[:300], "query longer than 300 characters", "http",
+                     client_tag(client), echo=True)
+        return jsonify({"error": "That query is too long. Keep it under 300 characters."}), 400
+
+    retry_after = _over_limit(client)
+    if retry_after:
+        log_rejected(query, f"visitor limit: {VISITOR_LIMIT} searches per "
+                     f"{VISITOR_WINDOW_S:.0f}s", "http", client_tag(client), echo=True)
+        response = jsonify({"error": f"Too many searches from you in the last minute. "
+                                     f"Try again in {retry_after:.0f} seconds."})
+        response.headers["Retry-After"] = str(int(retry_after) + 1)
+        return response, 429
 
     wardrobe = payload.get("wardrobe")
     if not isinstance(wardrobe, dict):
@@ -140,7 +200,8 @@ def ask():
     session = None
     with _one_at_a_time:
         try:
-            session = run_agent(query, wardrobe)
+            # logged_run writes one record per run, crash included, then re-raises.
+            session, _record = logged_run(query, wardrobe, source="http", echo=True)
         except Exception as exc:  # noqa: BLE001 — a 500 with a sentence beats a hang
             failure = f"{type(exc).__name__}: {exc}"
 

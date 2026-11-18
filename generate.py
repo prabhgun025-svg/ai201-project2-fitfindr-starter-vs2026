@@ -43,6 +43,7 @@ _prompt_tokens = 0
 _output_tokens = 0
 _client = None
 _budget_warned = False
+_wait_seconds = 0.0
 
 
 class QuotaGuard(Exception):
@@ -118,6 +119,7 @@ def _wait_for_slot() -> None:
                 file=sys.stderr,
                 flush=True,
             )
+        _add_wait(sleep_for)
         time.sleep(sleep_for)
         _call_times[:] = [t for t in _call_times if time.monotonic() - t < 60.0]
 
@@ -154,6 +156,21 @@ def usage() -> str:
 
 def call_count() -> int:
     return _session_calls
+
+
+def cache_hits() -> int:
+    """How many generate() calls this session were answered from the cache (free)."""
+    return _cache_hits
+
+
+def _add_wait(seconds: float) -> None:
+    global _wait_seconds
+    _wait_seconds += max(0.0, seconds)
+
+
+def wait_seconds() -> float:
+    """Total seconds this session spent sleeping for rate limits. runlog.py uses it."""
+    return _wait_seconds
 
 
 def token_counts() -> dict:
@@ -338,6 +355,7 @@ def generate(
                 file=sys.stderr,
                 flush=True,
             )
+            _add_wait(backoff)
             time.sleep(backoff)
 
     raise RuntimeError(
@@ -396,7 +414,9 @@ def embed(texts: list[str], task_type: str) -> list[list[float]]:
             )
             if not rate_limited:
                 raise ModelUnavailable(_explain(exc)) from exc
-            time.sleep(_retry_delay(exc, attempt))
+            delay = _retry_delay(exc, attempt)
+            _add_wait(delay)
+            time.sleep(delay)
 
     raise RuntimeError(
         f"Embedding still rate limited after {config.MAX_RETRIES} attempts.\n"
