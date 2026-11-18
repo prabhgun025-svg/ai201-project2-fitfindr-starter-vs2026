@@ -6,7 +6,8 @@ Everything about how the starter works and how to use it.
 
 ## Deployment
 
-FitFindr runs on **Render** (free web service) as an HTTP API.
+FitFindr runs on **Render** (free web service): a web page at `/`, and the
+JSON API behind it at `/ask`.
 
 | | |
 |---|---|
@@ -19,8 +20,16 @@ FitFindr runs on **Render** (free web service) as an HTTP API.
 
 ### Try it
 
+Open the URL in a browser: type what you're looking for, or click one of the
+example queries. The page shows the listing found, the fit card, the outfit
+suggestions, and what the agent understood from the query.
+
 The first request after the service has been idle takes about a minute while
-Render wakes it up. After that, a request takes a few seconds.
+Render wakes it up. After that, a request takes a few seconds. Each visitor
+gets 5 searches a minute (`FITFINDR_VISITOR_LIMIT`); more get HTTP 429 with a
+"try again in N seconds" message, because every search spends the same API key.
+
+The same thing from a terminal:
 
 ```bash
 curl https://<your-service>.onrender.com/health
@@ -70,7 +79,23 @@ Why the start command is exactly `gunicorn serve:app --timeout 120`:
 | Memory | Fits in 512 MB because `serve.py` handles one request at a time. Each MCP call starts a second Python process, and two at once wouldn't fit |
 
 Optional settings: `AI201_CACHE=0` turns off response caching;
-`AI201_MODEL` and `AI201_EMBEDDING_MODEL` change the models.
+`AI201_MODEL` and `AI201_EMBEDDING_MODEL` change the models;
+`FITFINDR_VISITOR_LIMIT` changes the per-visitor searches per minute (default 5).
+
+### Logs
+
+Every run writes one JSON record, including runs that stop early and runs
+that crash. Requests the server refuses (no query, a query over 300
+characters, over the visitor limit) are logged too, with status `rejected`.
+
+- **Where:** `logs/runs.jsonl`, one record per line (gitignored). The server
+  also prints each record to stdout prefixed `[runlog]`, which is where to read
+  them on Render (**Logs** tab), since Render's disk is wiped on restart.
+- **Fields:** listed at the top of [`runlog.py`](runlog.py). They include
+  timestamp, input, status, output, duration, rate-limit wait, model calls,
+  tokens, search strategy and exception.
+- **Cost:** `python measure_cost.py` runs the agent 10 times with the cache
+  off and writes the averages and raw records to `results/cost_*.md`.
 
 ### Running the same thing locally
 
@@ -189,6 +214,7 @@ does nothing.
 | `python serve.py` | Serves the agent over HTTP instead of exiting — **unit 9** |
 | `gunicorn serve:app --timeout 120` | The deployed start command. See **Deployment** at the top |
 | `python eval_retrieval.py` | Capstone: hit@3 for keyword vs embedding search on 15 labelled queries |
+| `python measure_cost.py` | 10 cache-off runs; averages seconds, requests and tokens per run into `results/` |
 
 Useful flags on `ask`:
 
@@ -281,6 +307,9 @@ the point of the session.
 | `retrieval_queries.py` | Capstone: 15 labelled queries for the retrieval eval |
 | `eval_retrieval.py` | Capstone: hit@3 for keyword vs embedding search, written to `results/` |
 | `render.yaml` | Render deploy config: build and start commands, Python version, the secret it needs |
+| `static/index.html` | The web page served at `/` |
+| `runlog.py` | One JSON record per run, written to `logs/runs.jsonl` |
+| `measure_cost.py` | Measures the average cost of one run |
 | `data/` | 40 listings and the wardrobe schema |
 | `utils/data_loader.py` | Loading the data. Use this rather than reading the files yourself |
 | `results/` | Run logs. **Commit these** — they're your evidence |

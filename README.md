@@ -692,5 +692,123 @@ My target, set before running: embeddings hit on at least 12/15, beat keyword on
 
 ---
 
+## Instrumentation
+
+**What gets logged.** Every agent run writes one JSON record through
+`runlog.py::logged_run`, which the CLI (`app.py`), the web server (`serve.py`)
+and `measure_cost.py` all call instead of calling `run_agent` directly. If
+`run_agent` raises, the record is written with `status: "error"` and the
+exception text before the exception is re-raised, so a crash still leaves a
+record. Requests the server refuses before the agent runs (no query, a query
+over 300 characters, over the 5-per-minute visitor limit) are logged by
+`runlog.py::log_rejected` with `status: "rejected"` and a `reason`.
+
+Records go to `logs/runs.jsonl`, one per line. The server also prints each one
+to stdout, because Render wipes its disk on restart but keeps stdout in its
+Logs tab.
+
+| Field | What it is |
+|---|---|
+| `timestamp`, `run_id` | UTC time the run started; 8-character id to find it again |
+| `source` | `cli`, `http` (the site/API) or `measure` |
+| `status` | `ok`, `no_results` (both searches empty, stopped before `suggest_outfit`), `model_error` (item found, model unreachable), `error` (crash), `rejected` |
+| `input` | the query and how many wardrobe items came with it |
+| `parsed` | what the query parser pulled out. This is how the parser bug shows up in the log (`"size": "30"` from a price) |
+| `search_strategy`, `results_count` | `keyword`, or `embedding` when the capstone fallback ran, and how many listings came back |
+| `output` | selected item (id, title, price, platform), fit card, outfit length, error message |
+| `duration_s`, `rate_limit_wait_s` | wall-clock seconds, and how much of that was spent waiting on the request limiter |
+| `model_calls`, `cache_hits`, `prompt_tokens`, `output_tokens` | generation requests actually sent, answers served from cache, tokens the service reported |
+| `embedding_requests`, `mcp_calls` | query embeddings sent (1 when the fallback ran) and MCP tool calls (1 or 2) |
+| `exception` | `Type: message` when `status` is `error` |
+
+**Ten runs.** These are the 10 cost-measurement runs (`python measure_cost.py`,
+cache off), followed by three runs through the web server's API: two finished
+searches, one of which used the embedding fallback (`tees`), and one
+impossible query that stopped early.
+
+```
+{"timestamp": "2026-11-18T05:15:27+00:00", "run_id": "4f690276", "source": "measure", "status": "ok", "input": {"query": "vintage graphic tee under $30", "wardrobe_items": 10}, "parsed": {"description": "vintage graphic tee", "size": "30", "max_price": 30.0}, "search_strategy": "keyword", "results_count": 1, "output": {"selected_item": {"id": "lst_021", "title": "Straight Leg Khaki Trousers — Olive", "price": 29.0, "platform": "poshmark"}, "fit_card": "[lst_021 · $29.0]\nObsessed with these straight-leg olive trousers I just scored on Poshmark for only $29 in mint condition! The color is the ultimate neutral, and they give off the best vintage workwear vibes. Can't wait to style them with a cropped hoodie and combat boots or keep it casual with an oversized crewneck.", "outfit_chars": 1683, "error": null}, "duration_s": 3.71, "rate_limit_wait_s": 0.0, "model_calls": 2, "cache_hits": 0, "prompt_tokens": 640, "output_tokens": 426, "embedding_requests": 0, "mcp_calls": 1, "model": "gemini-3.5-flash-lite", "exception": null}
+{"timestamp": "2026-11-18T05:15:31+00:00", "run_id": "cc58aa34", "source": "measure", "status": "ok", "input": {"query": "vintage graphic tee under $30", "wardrobe_items": 10}, "parsed": {"description": "vintage graphic tee", "size": "30", "max_price": 30.0}, "search_strategy": "keyword", "results_count": 1, "output": {"selected_item": {"id": "lst_021", "title": "Straight Leg Khaki Trousers — Olive", "price": 29.0, "platform": "poshmark"}, "fit_card": "[lst_021 · $29.0]\nScored these olive straight-leg trousers in pristine condition on Poshmark for just $29, and I’m already obsessed with the earthy, vintage fit. Thinking I’ll keep it casual with a ribbed tank and chunky sneakers today, but they're going to look so good styled with a distressed black denim jacket and combat boots, too. Nothing beats finding a staple piece that feels this effortless! 🫒✨", "outfit_chars": 1129, "error": null}, "duration_s": 2.51, "rate_limit_wait_s": 0.0, "model_calls": 2, "cache_hits": 0, "prompt_tokens": 534, "output_tokens": 342, "embedding_requests": 0, "mcp_calls": 1, "model": "gemini-3.5-flash-lite", "exception": null}
+{"timestamp": "2026-11-18T05:15:33+00:00", "run_id": "1e6a2e9c", "source": "measure", "status": "ok", "input": {"query": "vintage graphic tee under $30", "wardrobe_items": 10}, "parsed": {"description": "vintage graphic tee", "size": "30", "max_price": 30.0}, "search_strategy": "keyword", "results_count": 1, "output": {"selected_item": {"id": "lst_021", "title": "Straight Leg Khaki Trousers — Olive", "price": 29.0, "platform": "poshmark"}, "fit_card": "[lst_021 · $29.0]\nScored these straight-leg olive trousers in amazing condition for just $29 on Poshmark, and I’m already obsessed with the color. They have the absolute best vintage utility vibe and fit like a dream. Can’t wait to style them with a white tank and a black denim jacket, or just keep it cozy with an oversized grey crewneck and combat boots!", "outfit_chars": 1590, "error": null}, "duration_s": 3.63, "rate_limit_wait_s": 0.0, "model_calls": 2, "cache_hits": 0, "prompt_tokens": 608, "output_tokens": 404, "embedding_requests": 0, "mcp_calls": 1, "model": "gemini-3.5-flash-lite", "exception": null}
+{"timestamp": "2026-11-18T05:15:37+00:00", "run_id": "27bd6b77", "source": "measure", "status": "ok", "input": {"query": "vintage graphic tee under $30", "wardrobe_items": 10}, "parsed": {"description": "vintage graphic tee", "size": "30", "max_price": 30.0}, "search_strategy": "keyword", "results_count": 1, "output": {"selected_item": {"id": "lst_021", "title": "Straight Leg Khaki Trousers — Olive", "price": 29.0, "platform": "poshmark"}, "fit_card": "[lst_021 · $29.0]\nObsessed with these straight-leg olive trousers I just scored on Poshmark for only $29! The color is the ultimate earthy neutral, and the condition is literally spotless. I’m already planning to style them two ways: either dressed down with a ribbed white tank and a vintage black denim jacket for 90s minimalism, or thrown on with an oversized grey crewneck and combat boots for that effortless utility vibe. ✨", "outfit_chars": 1722, "error": null}, "duration_s": 2.87, "rate_limit_wait_s": 0.0, "model_calls": 2, "cache_hits": 0, "prompt_tokens": 652, "output_tokens": 459, "embedding_requests": 0, "mcp_calls": 1, "model": "gemini-3.5-flash-lite", "exception": null}
+{"timestamp": "2026-11-18T05:15:40+00:00", "run_id": "75bd3c40", "source": "measure", "status": "ok", "input": {"query": "vintage graphic tee under $30", "wardrobe_items": 10}, "parsed": {"description": "vintage graphic tee", "size": "30", "max_price": 30.0}, "search_strategy": "keyword", "results_count": 1, "output": {"selected_item": {"id": "lst_021", "title": "Straight Leg Khaki Trousers — Olive", "price": 29.0, "platform": "poshmark"}, "fit_card": "[lst_021 · $29.0]\nScored these olive straight-leg trousers in pristine condition on Poshmark for just $29, and I’m already obsessed with the vintage earth-tone vibe. I’m thinking they’ll look so good with an oversized crewneck and combat boots, or dressed down with a simple white tank and chunky sneakers. Such a good minimalist staple for autumn! 🫒✨", "outfit_chars": 1140, "error": null}, "duration_s": 2.07, "rate_limit_wait_s": 0.0, "model_calls": 2, "cache_hits": 0, "prompt_tokens": 540, "output_tokens": 339, "embedding_requests": 0, "mcp_calls": 1, "model": "gemini-3.5-flash-lite", "exception": null}
+{"timestamp": "2026-11-18T05:15:42+00:00", "run_id": "8fd42522", "source": "measure", "status": "ok", "input": {"query": "vintage graphic tee under $30", "wardrobe_items": 10}, "parsed": {"description": "vintage graphic tee", "size": "30", "max_price": 30.0}, "search_strategy": "keyword", "results_count": 1, "output": {"selected_item": {"id": "lst_021", "title": "Straight Leg Khaki Trousers — Olive", "price": 29.0, "platform": "poshmark"}, "fit_card": "[lst_021 · $29.0]\nScored these gorgeous olive straight-leg trousers in pristine condition on Poshmark for just $29, and I’m already obsessed with the color. They have the coolest vintage utility vibe and fit like a dream. Can’t wait to style them with everything from chunky white sneakers to my favorite combat boots! 🫒✨", "outfit_chars": 1076, "error": null}, "duration_s": 2.46, "rate_limit_wait_s": 0.0, "model_calls": 2, "cache_hits": 0, "prompt_tokens": 518, "output_tokens": 307, "embedding_requests": 0, "mcp_calls": 1, "model": "gemini-3.5-flash-lite", "exception": null}
+{"timestamp": "2026-11-18T05:15:44+00:00", "run_id": "5fd1913a", "source": "measure", "status": "ok", "input": {"query": "vintage graphic tee under $30", "wardrobe_items": 10}, "parsed": {"description": "vintage graphic tee", "size": "30", "max_price": 30.0}, "search_strategy": "keyword", "results_count": 1, "output": {"selected_item": {"id": "lst_021", "title": "Straight Leg Khaki Trousers — Olive", "price": 29.0, "platform": "poshmark"}, "fit_card": "[lst_021 · $29.0]\nScored these straight-leg olive trousers in pristine condition for just $29 on Poshmark, and they are officially my new daily uniform. Obsessed with the structured fit and that perfect, earthy 90s wash. Thinking of styling them with a crisp white tank and vintage denim, or leaning into the cozy slouch with an oversized grey crewneck and combat boots!", "outfit_chars": 1800, "error": null}, "duration_s": 2.63, "rate_limit_wait_s": 0.0, "model_calls": 2, "cache_hits": 0, "prompt_tokens": 680, "output_tokens": 475, "embedding_requests": 0, "mcp_calls": 1, "model": "gemini-3.5-flash-lite", "exception": null}
+{"timestamp": "2026-11-18T05:15:47+00:00", "run_id": "e5cfc545", "source": "measure", "status": "ok", "input": {"query": "vintage graphic tee under $30", "wardrobe_items": 10}, "parsed": {"description": "vintage graphic tee", "size": "30", "max_price": 30.0}, "search_strategy": "keyword", "results_count": 1, "output": {"selected_item": {"id": "lst_021", "title": "Straight Leg Khaki Trousers — Olive", "price": 29.0, "platform": "poshmark"}, "fit_card": "[lst_021 · $29.0]\nScored these pristine olive straight-leg trousers on Poshmark for just $29 and I’m officially obsessed with the color. They have that perfect 90s slouch and look insanely good paired with a white ribbed tank and a vintage black denim jacket. Can't wait to style these on heavy rotation! 🫒✨", "outfit_chars": 1413, "error": null}, "duration_s": 42.49, "rate_limit_wait_s": 39.24, "model_calls": 2, "cache_hits": 0, "prompt_tokens": 599, "output_tokens": 389, "embedding_requests": 0, "mcp_calls": 1, "model": "gemini-3.5-flash-lite", "exception": null}
+{"timestamp": "2026-11-18T05:16:29+00:00", "run_id": "e4510ad3", "source": "measure", "status": "ok", "input": {"query": "vintage graphic tee under $30", "wardrobe_items": 10}, "parsed": {"description": "vintage graphic tee", "size": "30", "max_price": 30.0}, "search_strategy": "keyword", "results_count": 1, "output": {"selected_item": {"id": "lst_021", "title": "Straight Leg Khaki Trousers — Olive", "price": 29.0, "platform": "poshmark"}, "fit_card": "[lst_021 · $29.0]\nScored these straight-leg olive trousers in mint condition for just $29 on Poshmark, and they are officially my new favorite earth-toned staple. I'm already planning to style them with a white tank and chunky sneakers for casual off-duty days, or lean into a grunge vibe with an oversized grey crewneck and combat boots. Such a versatile vintage find! 🫒✨", "outfit_chars": 1653, "error": null}, "duration_s": 3.44, "rate_limit_wait_s": 0.0, "model_calls": 2, "cache_hits": 0, "prompt_tokens": 640, "output_tokens": 442, "embedding_requests": 0, "mcp_calls": 1, "model": "gemini-3.5-flash-lite", "exception": null}
+{"timestamp": "2026-11-18T05:16:33+00:00", "run_id": "e5d2f32f", "source": "measure", "status": "ok", "input": {"query": "vintage graphic tee under $30", "wardrobe_items": 10}, "parsed": {"description": "vintage graphic tee", "size": "30", "max_price": 30.0}, "search_strategy": "keyword", "results_count": 1, "output": {"selected_item": {"id": "lst_021", "title": "Straight Leg Khaki Trousers — Olive", "price": 29.0, "platform": "poshmark"}, "fit_card": "[lst_021 · $29.0]\nScored these olive straight-leg trousers in pristine condition on Poshmark for just $29, and I’m already obsessed with the rich earth tone. They have that perfect vintage minimalist fit that looks just as good with a simple white tank and sneakers as they do dressed down with an oversized crewneck. Sustainable style really does hit different! 🌱✨", "outfit_chars": 1655, "error": null}, "duration_s": 3.22, "rate_limit_wait_s": 0.0, "model_calls": 2, "cache_hits": 0, "prompt_tokens": 636, "output_tokens": 427, "embedding_requests": 0, "mcp_calls": 1, "model": "gemini-3.5-flash-lite", "exception": null}
+{"timestamp": "2026-11-18T05:16:56+00:00", "run_id": "dd8ee1fe", "source": "http", "status": "ok", "input": {"query": "chelsea boots", "wardrobe_items": 10}, "parsed": {"description": "cheea boot", "size": "L", "max_price": null}, "search_strategy": "keyword", "results_count": 1, "output": {"selected_item": {"id": "lst_006", "title": "Graphic Tee — 2003 Tour Bootleg Style", "price": 24.0, "platform": "depop"}, "fit_card": "[lst_006 · $24.0]\nScored the ultimate 2003 tour bootleg tee for just $24 on Depop and I’m honestly obsessed with the vintage grunge fade on this graphic. Tossed it on with baggy dark denim and a black jacket for the easiest off-duty streetwear fit, but it looks just as good tucked into wide-leg trousers with combat boots. Tap the link in bio to shop the look before I change my mind and keep it for myself! 🖤✨", "outfit_chars": 1085, "error": null}, "duration_s": 5.47, "rate_limit_wait_s": 0.0, "model_calls": 2, "cache_hits": 0, "prompt_tokens": 545, "output_tokens": 352, "embedding_requests": 0, "mcp_calls": 1, "model": "gemini-3.5-flash-lite", "exception": null}
+{"timestamp": "2026-11-18T05:17:02+00:00", "run_id": "f9a7ca12", "source": "http", "status": "ok", "input": {"query": "tees", "wardrobe_items": 0}, "parsed": {"description": "tee", "size": "S", "max_price": null}, "search_strategy": "keyword", "results_count": 2, "output": {"selected_item": {"id": "lst_002", "title": "Y2K Baby Tee — Butterfly Print", "price": 18.0, "platform": "depop"}, "fit_card": "[lst_002 · $18.0]\nScored this absolute dream of a Y2K butterfly baby tee in mint condition and I'm obsessed! 🦋 It’s the ultimate versatile anchor piece for anyone building their wardrobe from scratch—you can style it super nostalgic with cargos or lean into a soft indie-streetwear vibe. Snagging this gem for just $18 over on my Depop before I keep it for myself! ✨🛒", "outfit_chars": 2089, "error": null}, "duration_s": 5.25, "rate_limit_wait_s": 0.0, "model_calls": 2, "cache_hits": 0, "prompt_tokens": 702, "output_tokens": 594, "embedding_requests": 0, "mcp_calls": 1, "model": "gemini-3.5-flash-lite", "exception": null}
+{"timestamp": "2026-11-18T05:17:07+00:00", "run_id": "f8ccb033", "source": "http", "status": "no_results", "input": {"query": "designer ballgown size XXS under $5", "wardrobe_items": 10}, "parsed": {"description": "deigner bagown", "size": "S", "max_price": 5.0}, "search_strategy": "embedding", "results_count": 0, "output": {"selected_item": null, "fit_card": null, "outfit_chars": 0, "error": "No items found matching 'deigner bagown' under $5.0 in size S. Neither keyword nor meaning-based search found a match. Try different keywords, a higher price, or removing size filters."}, "duration_s": 0.94, "rate_limit_wait_s": 0.0, "model_calls": 0, "cache_hits": 0, "prompt_tokens": 0, "output_tokens": 0, "embedding_requests": 1, "mcp_calls": 2, "model": "gemini-3.5-flash-lite", "exception": null}
+```
+
+**Failed runs.** All three are from the same server session:
+
+1. **Rejected input:** a request with no `query`, which got HTTP 400.
+2. **Rejected input:** a sixth search inside a minute from one visitor, which
+   got HTTP 429. The five before it are in the full log.
+3. **Model error:** a search with the server started on an invalid
+   `GEMINI_API_KEY`. Search still worked, because the MCP server process read
+   the real key from `.env`. The run found an item, then the model call
+   failed, and the agent stopped with a message instead of crashing.
+
+```
+{"timestamp": "2026-11-18T05:17:07+00:00", "run_id": "d97807d4", "source": "http", "status": "rejected", "reason": "no query in request body", "input": {"query": null}, "client": "14915055", "duration_s": 0.0, "model_calls": 0, "exception": null}
+{"timestamp": "2026-11-18T05:17:12+00:00", "run_id": "76a6372e", "source": "http", "status": "rejected", "reason": "visitor limit: 5 searches per 60s", "input": {"query": "designer ballgown size XXS under $5"}, "client": "fec52565", "duration_s": 0.0, "model_calls": 0, "exception": null}
+{"timestamp": "2026-11-18T05:17:14+00:00", "run_id": "c4452261", "source": "http", "status": "model_error", "input": {"query": "cargo pants under $40", "wardrobe_items": 10}, "parsed": {"description": "cargo pant", "size": "S", "max_price": 40.0}, "search_strategy": "embedding", "results_count": 2, "output": {"selected_item": {"id": "lst_008", "title": "Knit Cardigan — Chunky Brown", "price": 35.0, "platform": "depop"}, "fit_card": null, "outfit_chars": 0, "error": "Found Knit Cardigan — Chunky Brown ($35.0 on depop), but couldn't reach the model to style it: The model rejected your API key. Check GEMINI_API_KEY in your .env file, or create a fresh key at aistudio.google.com. Fix that and ask again."}, "duration_s": 1.32, "rate_limit_wait_s": 0.0, "model_calls": 1, "cache_hits": 0, "prompt_tokens": 0, "output_tokens": 0, "embedding_requests": 1, "mcp_calls": 2, "model": "gemini-3.5-flash-lite", "exception": null}
+```
+
+The full session, all 20 records unedited, is committed in
+`results/runlog_2026-11-18_session.md`.
+
+---
+
+## What It Costs
+
+**The real cost is quota and seconds, not dollars.** FitFindr runs on Gemini's
+free tier, so the actual API spend is $0. What runs out is requests: the free
+tier allows 15 generation requests a minute for `gemini-3.5-flash-lite`, and
+that is the limit that makes runs wait.
+
+**One complete run costs, on average:**
+
+| | Per run (mean of 10) |
+|---|---|
+| Generation requests | **2** (`suggest_outfit` + `create_fit_card`), every run |
+| Tokens | **1,006** (605 prompt + 401 output; output varied ±56 between runs) |
+| Seconds of active work | **3.0 s** |
+| Wall-clock seconds | **6.9 s**, including 3.9 s average rate-limit wait |
+| Embedding requests | **0** on this query; **+1** when keyword search is empty and the fallback runs |
+
+So one key supports at most **7 complete runs a minute** (15 ÷ 2), and the
+eighth waits. That happened in this measurement: run 8 waited 39 s, which is
+why the wall-clock mean (6.9 s, standard deviation 12.5 s) is much higher than
+the active time (3.0 s). Runs that stop early cost much less. The five
+impossible queries in the server log made 0 generation requests and took
+about 0.9 s each.
+
+**How I measured it.** `python measure_cost.py` ran the criterion 1 query
+(`vintage graphic tee under $30`, example wardrobe) 10 times in a row, with
+the response cache off so every run sent real requests. Each run went through
+`runlog.logged_run`, which takes the request and token counters from
+`generate.py` before and after the run and records the difference. Token
+counts are the ones the Gemini API reports in `usage_metadata`; seconds are
+`time.perf_counter()` around `run_agent`; the wait time is what `generate.py`'s
+rate limiter actually slept. The script averages those fields over the 10
+records. Averages and raw records: `results/cost_2026-11-18_0016.md`.
+
+**What the numbers leave out:**
+
+- **Embedding tokens.** A query embedding is sent from inside the MCP server
+  process, so its tokens aren't in `prompt_tokens`. A query is a few words, so
+  it's negligible next to about 1,000 generation tokens.
+- **The embedding index build.** It happens once per server start (one
+  request covering all 40 listings) and is then cached, so it's not a per-run
+  cost.
+- **Render's free tier.** It's $0 too. Its cost is the roughly one-minute
+  wake-up after 15 idle minutes, which isn't part of any single run.
+
+---
+
 📖 **How to run this project: [RUNNING.md](RUNNING.md)**
 
