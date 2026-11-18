@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FitFindr</title>
+<style>
+  :root {
+    --bg: #faf7f2; --surface: #ffffff; --text: #2a2622; --muted: #6f665d;
+    --line: #e6dfd5; --accent: #9a4f2c; --accent-text: #ffffff;
+    --warn-bg: #fdf1e7; --warn-line: #e9c6a8; --chip: #f1ebe3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1b1916; --surface: #24211d; --text: #ede6dc; --muted: #a59a8d;
+      --line: #3a352f; --accent: #d98a5f; --accent-text: #1b1916;
+      --warn-bg: #33261c; --warn-line: #6b4a33; --chip: #2f2b26;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 40px 16px 64px; }
+  h1 { font-size: 2rem; margin: 0 0 4px; letter-spacing: -0.02em; }
+  .tagline { color: var(--muted); margin: 0 0 28px; }
+  form { display: flex; gap: 8px; flex-wrap: wrap; }
+  input[type=text] {
+    flex: 1 1 280px; min-width: 0; padding: 12px 14px; font: inherit; color: var(--text);
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  }
+  input[type=text]:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button {
+    padding: 12px 20px; font: inherit; font-weight: 600; border: 0; border-radius: 10px;
+    background: var(--accent); color: var(--accent-text); cursor: pointer;
+  }
+  button:disabled { opacity: 0.6; cursor: wait; }
+  .options { margin: 10px 0 0; color: var(--muted); font-size: 0.92rem; }
+  .examples { margin: 14px 0 0; display: flex; gap: 6px; flex-wrap: wrap; }
+  .examples button {
+    padding: 5px 11px; font-size: 0.85rem; font-weight: 500; background: var(--chip);
+    color: var(--text); border: 1px solid var(--line); border-radius: 999px;
+  }
+  .status { margin: 24px 0 0; color: var(--muted); min-height: 1.5em; }
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px 20px; margin: 16px 0 0;
+  }
+  .card h2 {
+    font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--muted); margin: 0 0 8px; font-weight: 600;
+  }
+  .item-title { font-size: 1.2rem; font-weight: 650; margin: 0; }
+  .item-meta { color: var(--muted); margin: 2px 0 0; }
+  .fitcard { font-size: 1.05rem; white-space: pre-wrap; margin: 0; }
+  .outfit { white-space: pre-wrap; margin: 0; font-size: 0.95rem; }
+  .stopped { background: var(--warn-bg); border-color: var(--warn-line); }
+  .understood { font-size: 0.88rem; color: var(--muted); margin: 16px 0 0; }
+  .understood code { background: var(--chip); padding: 1px 6px; border-radius: 5px; }
+  footer { margin-top: 48px; color: var(--muted); font-size: 0.82rem; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>FitFindr</h1>
+  <p class="tagline">Describe a thrifted piece you're after. FitFindr finds a listing, styles it with your wardrobe, and writes the caption.</p>
+
+  <form id="ask">
+    <label for="q" hidden>What are you looking for?</label>
+    <input id="q" type="text" maxlength="300" autocomplete="off"
+           placeholder="e.g. vintage graphic tee under $30" required>
+    <button id="go" type="submit">Find it</button>
+  </form>
+  <div class="options">
+    <label><input id="empty" type="checkbox"> I'm starting with an empty wardrobe</label>
+  </div>
+  <div class="examples" id="examples">
+    <button type="button">vintage graphic tee under $30</button>
+    <button type="button">denim jacket under $50</button>
+    <button type="button">chelsea boots</button>
+    <button type="button">designer ballgown size XXS under $5</button>
+  </div>
+
+  <p class="status" id="status" role="status" aria-live="polite"></p>
+
+  <section id="result" hidden>
+    <div class="card stopped" id="stopped" hidden>
+      <h2>No fit this time</h2>
+      <p id="stopped-text" style="margin:0"></p>
+    </div>
+    <div class="card" id="item-card" hidden>
+      <h2>Found</h2>
+      <p class="item-title" id="item-title"></p>
+      <p class="item-meta" id="item-meta"></p>
+    </div>
+    <div class="card" id="fit-card" hidden>
+      <h2>Fit card</h2>
+      <p class="fitcard" id="fit-text"></p>
+    </div>
+    <div class="card" id="outfit-card" hidden>
+      <h2>How to wear it</h2>
+      <p class="outfit" id="outfit-text"></p>
+    </div>
+    <p class="understood" id="understood"></p>
+  </section>
+
+  <footer>Searches a sample catalogue of 40 secondhand listings. Each visitor gets 5 searches a minute.</footer>
+</main>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const form = $("ask"), input = $("q"), go = $("go"), status = $("status");
+  let timer = null;
+
+  // The [lst_xxx · $nn] stamp tools.py puts on model text is for the trace, not for people.
+  const stripRef = (s) => (s || "").replace(/^\[[^\]]*\]\s*/, "");
+
+  function show(id, on) { $(id).hidden = !on; }
+
+  function startTimer() {
+    const t0 = Date.now();
+    status.textContent = "Searching…";
+    timer = setInterval(() => {
+      const s = Math.round((Date.now() - t0) / 1000);
+      status.textContent = s < 8
+        ? `Searching… ${s}s`
+        : `Still working… ${s}s. If the site has been idle it takes about a minute to wake up.`;
+    }, 1000);
+  }
+  function stopTimer() { clearInterval(timer); timer = null; }
+
+  function render(session) {
+    show("result", true);
+    const err = session.error;
+    const item = session.selected_item;
+    show("stopped", !!err);
+    $("stopped-text").textContent = err || "";
+    show("item-card", !!item);
+    if (item) {
+      $("item-title").textContent = item.title;
+      $("item-meta").textContent =
+        `$${item.price} on ${item.platform} · size ${item.size} · ${item.condition} condition`;
+    }
+    const card = stripRef(session.fit_card), outfit = stripRef(session.outfit_suggestion);
+    show("fit-card", !!card && !err);
+    $("fit-text").textContent = card;
+    show("outfit-card", !!outfit && !err);
+    $("outfit-text").textContent = outfit;
+
+    const p = session.parsed || {};
+    const u = $("understood");
+    u.textContent = "";
+    const add = (label, value) => {
+      u.append(label + " ");
+      const c = document.createElement("code");
+      c.textContent = value === null || value === undefined || value === "" ? "—" : String(value);
+      u.append(c, "  ");
+    };
+    add("Searched for", p.description);
+    add("size", p.size);
+    add("max price", p.max_price);
+    add("via", session.search_strategy === "embedding" ? "meaning-based fallback" : "keyword search");
+  }
+
+  async function ask(query) {
+    go.disabled = true;
+    show("result", false);
+    startTimer();
+    try {
+      const body = { query };
+      if ($("empty").checked) body.wardrobe = { items: [] };
+      const res = await fetch("/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      let data = {};
+      try { data = await res.json(); } catch (_) { /* non-JSON error page */ }
+      stopTimer();
+      if (!res.ok) {
+        status.textContent = data.error || `Something went wrong (HTTP ${res.status}). Try again.`;
+        return;
+      }
+      status.textContent = "";
+      render(data);
+    } catch (e) {
+      stopTimer();
+      status.textContent = "Couldn't reach FitFindr. Check your connection and try again.";
+    } finally {
+      go.disabled = false;
+    }
+  }
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const q = input.value.trim();
+    if (q) ask(q);
+  });
+  $("examples").addEventListener("click", (e) => {
+    if (e.target.tagName !== "BUTTON" || go.disabled) return;
+    input.value = e.target.textContent;
+    ask(input.value);
+  });
+})();
+</script>
+</body>
+</html>
