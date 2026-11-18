@@ -19,6 +19,28 @@
 > **The rest of this file is your submission.** Fill it in as you go.
 
 ---
+
+> ### ⚠️ Note on this repository
+>
+> On **18 November 2026** I deleted my original repository by accident:
+> `github.com/prabhgun025-svg/ai201-project2-fitfindr-starter-v2026`, a fork of
+> the course starter. GitHub doesn't let me restore it from the trash, because
+> it was a fork.
+>
+> **The project itself is unchanged.** It's the same FitFindr project, with the
+> same code, criteria, results and README, and it's what I'm continuing to
+> work on. I'm re-uploading it to a new repository from my local copy.
+>
+> **What's different:**
+> - The repository URL is now `<new repository URL>`.
+> - The new repository is not linked to the course starter as a fork.
+> - Anything that pointed to the old URL, such as an earlier submission link,
+>   no longer works.
+>
+> The run logs in `results/` are timestamped records from the actual runs, so
+> the dates of the testing are still on record.
+
+---
 ## Capstone is at the bottom
 
 <!-- ─────────────────────────────────────────────────────────────────────────
@@ -107,7 +129,9 @@ This is a fitfindr application in which the user asks questions such as pricing,
 
 **Where it lives:** `agent.py::run_agent`
 
-**How the query is parsed:** Regex — extracts price with pattern `(?:under\s+)?(?:\$)?(\d+(?:\.\d+)?)`, size with `(?:size\s+)?([XS]+|M|L|XL|XXL|\d+)`, and the remaining text becomes the description.
+**How the query is parsed:** Regex, in `agent.py::parse_query`. The price is a number after `$` or after "under", "below", "less than", "max" or "up to". The size is `size X`, a waist (`W30`), a shoe size (`US 8.5`), or a standalone size label (`XS`, `XL`, or a capital `S`, `M`, `L`). Every pattern matches whole words only, and only the matched span is removed; the remaining text becomes the description.
+
+> *Changed in the capstone.* The original regex was `(?:under\s+)?(?:\$)?(\d+(?:\.\d+)?)` for price and `(?:size\s+)?([XS]+|M|L|XL|XXL|\d+)` for size. It had no word boundaries and removed every match anywhere in the query, so "dresses" was searched as size SS with the description "dree", and "under $30" also became size 30. That bug caused both capstone misses (C3 and C4).
 
 **What moves through the session:** `query` (input) → `parsed` (description, size, max_price extracted) → `search_results` (list of listings) → `selected_item` (first listing, or None if empty search) → `outfit_suggestion` (model text) → `fit_card` (model caption, or None if stopped early) → `error` (message if branch stops).
 
@@ -692,6 +716,597 @@ My target, set before running: embeddings hit on at least 12/15, beat keyword on
 
 ---
 
+## Capstone Run Log
+
+Each of the five capstone criteria (C1–C5, in `criteria.md`) was run three
+separate times, with the response cache off, on 18 November 2026 between
+02:21 and 02:48. A criterion is MET only if every run met its target.
+
+These runs include the query parser fix (`agent.py::parse_query`), which was
+made after the first measurement. Before the fix, C4 scored 4/10 and C3 2/5.
+
+| Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
+|---|---|---|---|---|---|
+| C1. Embedding hit@3 ≥ 12/15, beats keyword on plurals/synonyms, ties on exact | ≥ 12 of 15 | 15/15 (keyword 5/15) | 15/15 (keyword 5/15) | 15/15 (keyword 5/15) | MET |
+| C2. Recorded strategy matches whether keyword search was empty | 10 of 10 | 10/10 | 10/10 | 10/10 | MET |
+| C3. Unseen off-topic queries return 0 listings and make 0 model calls | 5 of 5 | 3/5 | 3/5 | 3/5 | MISSED |
+| C4. Plural/synonym queries typed into the agent select a labelled listing | ≥ 8 of 10 | 9/10 | 9/10 | 9/10 | MET |
+| C5. Original criteria 1–5 all MET, and `lst_021`/`lst_004` selected in 10 of 10 tries | 5/5 MET; ids 10/10 | 5/5 MET; ids 0/10 | 5/5 MET; ids 0/10 | 5/5 MET; ids 0/10 | MISSED |
+
+### Real output from run 1
+
+All of this is copied from the files saved during run 1
+(18 November 2026, 02:21–02:26), in `results/capstone_runs/run1/`. The text
+is unchanged. The only edits: some blocks show selected lines (each one says
+so), the fit card's code fence was removed, and the scored C5 entry's lists
+are put on single lines.
+
+In the agent traces, the numbered `[n] step / in / out / →` lines are written
+by `trace.py::step`, called from `agent.py::run_agent`. The `(via MCP)` steps
+are the searches running in `mcp_server.py`.
+
+**C1:** `c1_stdout.txt`, printed by `eval_retrieval.py::main`, which calls
+`tools.py::search_listings` and `tools.py::semantic_search_scored` directly.
+
+```
+| Group | Keyword | Embedding | Agent policy (keyword → embedding if empty) |
+|---|---|---|---|
+| plural | 0/5 | 5/5 | 5/5 |
+| synonym | 0/5 | 5/5 | 4/5 |
+| exact | 5/5 | 5/5 | 5/5 |
+| **all** | **5/15** | **15/15** | **14/15** |
+
+| Group | Query | Relevant | Keyword top 3 | KW | Embedding top 3 (score) | EM | Fallback ran? | Policy |
+|---|---|---|---|---|---|---|---|---|
+| plural | tees | lst_006, lst_002, lst_033 | (empty) | miss | lst_033 (0.67), lst_002 (0.67), lst_006 (0.66) | HIT | yes | HIT |
+| synonym | denim pants | lst_001, lst_031, lst_037 | lst_005, lst_007, lst_011 | miss | lst_037 (0.69), lst_016 (0.67), lst_001 (0.67) | HIT | no | miss |
+| synonym | purse | lst_039 | (empty) | miss | lst_039 (0.68), lst_034 (0.62), lst_040 (0.61) | HIT | yes | HIT |
+| exact | chelsea boots | lst_028 | lst_028 | HIT | lst_028 (0.71), lst_009 (0.62), lst_019 (0.60) | HIT | no | HIT |
+```
+
+(4 of the 15 per-query rows shown; all 15 are in the file.)
+
+**C2:** `c2_c3_c4_stdout.txt`. The trace is from `agent.py::run_agent`; the
+`C2 …` lines and the final tally are printed by `eval_capstone.py::main`. Below
+are one query where keyword search found results (no
+`semantic_search_listings` step) and one where it returned `[]` (fallback
+step present), then all ten result lines.
+
+```
+[1] parse_query
+      in:  chelsea boots
+      out: {'description': 'chelsea boots', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'chelsea boots', 'size': None, 'max_price': None}
+      out: 1 items: Suede Chelsea Boots — Tan
+      →    branch: results, continuing
+[3] select_item
+      in:  1 results
+      out: Suede Chelsea Boots — Tan ($44.0, poshmark)
+      →    first result
+[4] suggest_outfit
+      in:  new_item=lst_028 'Suede Chelsea Boots — Tan' ($44.0), wardrobe=10 items
+      out: [lst_028 · $44.0] At $44, tan suede Chelsea boots are a fantastic find—they add a softer, more vintage texture…
+[5] create_fit_card
+      in:  new_item=lst_028 'Suede Chelsea Boots — Tan' ($44.0), outfit=<suggest_outfit text>
+      out: [lst_028 · $44.0] Scored these tan suede Chelsea boots in fair condition on Poshmark for just $44, and honestl…
+  C2 'chelsea boots': keyword results → keyword PASS
+```
+
+```
+[1] parse_query
+      in:  tees
+      out: {'description': 'tees', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'tees', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'tees', 'size': None, 'max_price': None}
+      out: 10 items: Vintage Band Tee — Faded Grey, Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style … +7 more
+      →    branch: results, continuing
+[4] select_item
+      in:  10 results
+      out: Vintage Band Tee — Faded Grey ($19.0, depop)
+      →    first result
+[5] suggest_outfit
+      in:  new_item=lst_033 'Vintage Band Tee — Faded Grey' ($19.0), wardrobe=10 items
+      out: [lst_033 · $19.0] Here are two specific outfit suggestions that blend the grunge, vintage vibe of your new ban…
+[6] create_fit_card
+      in:  new_item=lst_033 'Vintage Band Tee — Faded Grey' ($19.0), outfit=<suggest_outfit text>
+      out: [lst_033 · $19.0] Scored this perfectly faded vintage band tee for just $19 on Depop and I’m officially obsess…
+  C2 'tees': keyword empty → embedding PASS
+```
+
+```
+  C2 'chelsea boots': keyword results → keyword PASS
+  C2 'denim jacket under $50': keyword results → keyword PASS
+  C2 'cargo pants': keyword results → keyword PASS
+  C2 'graphic tee': keyword results → keyword PASS
+  C2 'leather belt': keyword results → keyword PASS
+  C2 'tees': keyword empty → embedding PASS
+  C2 'hoodies': keyword empty → embedding PASS
+  C2 'dresses': keyword empty → embedding PASS
+  C2 'blazers': keyword empty → embedding PASS
+  C2 'belts': keyword empty → embedding PASS
+```
+
+**C3:** `c2_c3_c4_stdout.txt`, from the same two functions. The first
+query passed: keyword search returned `[]`, the fallback returned `[]`, and
+the run stopped with no model calls. The second failed: keyword search
+returned 10 listings, so the fallback never ran and the agent styled a
+cardigan with 2 model calls. Then all five result lines.
+
+```
+[1] parse_query
+      in:  airline ticket refund
+      out: {'description': 'airline ticket refund', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'airline ticket refund', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'airline ticket refund', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, stopping
+  C3 'airline ticket refund': direct 0 listings, agent no_results with 0 calls → PASS
+```
+
+```
+[1] parse_query
+      in:  how to change a car tire
+      out: {'description': 'how to change a car tire', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'how to change a car tire', 'size': None, 'max_price': None}
+      out: 10 items: Knit Cardigan — Chunky Brown, Vintage Levi's 501 Jeans — Medium Wash, Graphic Tee — 2003 Tour Bootleg Style … +7 more
+      →    branch: results, continuing
+[3] select_item
+      in:  10 results
+      out: Knit Cardigan — Chunky Brown ($35.0, depop)
+      →    first result
+[4] suggest_outfit
+      in:  new_item=lst_008 'Knit Cardigan — Chunky Brown' ($35.0), wardrobe=10 items
+      out: [lst_008 · $35.0] Here are two specific outfit suggestions that combine your new chunky brown cardigan with pi…
+[5] create_fit_card
+      in:  new_item=lst_008 'Knit Cardigan — Chunky Brown' ($35.0), outfit=<suggest_outfit text>
+      out: [lst_008 · $35.0] scored this chunky brown knit cardigan in pristine condition on Depop for just $35 and I am …
+  C3 'how to change a car tire': direct 0 listings, agent ok with 2 calls → FAIL
+```
+
+```
+  C3 'airline ticket refund': direct 0 listings, agent no_results with 0 calls → PASS
+  C3 'how to change a car tire': direct 0 listings, agent ok with 2 calls → FAIL
+  C3 'python list comprehension': direct 0 listings, agent no_results with 0 calls → PASS
+  C3 'pizza delivery near me': direct 0 listings, agent ok with 2 calls → FAIL
+  C3 'mortgage interest rates': direct 0 listings, agent no_results with 0 calls → PASS
+```
+
+**C4:** `c2_c3_c4_stdout.txt`, from the same two functions. This is the one
+failing query: keyword search found "denim" in 7 listings and put the
+corduroys first, so the fallback never ran. Then all ten result lines and the
+run's final tally.
+
+```
+[1] parse_query
+      in:  denim pants
+      out: {'description': 'denim pants', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'denim pants', 'size': None, 'max_price': None}
+      out: 7 items: Corduroy Wide-Leg Pants — Rust, Denim Jacket — Light Wash, Cropped, Low-Rise Cargo Pants — Khaki … +4 more
+      →    branch: results, continuing
+[3] select_item
+      in:  7 results
+      out: Corduroy Wide-Leg Pants — Rust ($32.0, depop)
+      →    first result
+[4] suggest_outfit
+      in:  new_item=lst_005 'Corduroy Wide-Leg Pants — Rust' ($32.0), wardrobe=10 items
+      out: [lst_005 · $32.0] Here are two outfit suggestions that incorporate your new rust corduroy pants into your curr…
+[5] create_fit_card
+      in:  new_item=lst_005 'Corduroy Wide-Leg Pants — Rust' ($32.0), outfit=<suggest_outfit text>
+      out: [lst_005 · $32.0] scored these vintage-washed rust corduroy wide-legs on Depop for just $32 and I am never tak…
+  C4 'denim pants': selected lst_005 → FAIL
+```
+
+```
+  C4 'tees': selected lst_033 → PASS
+  C4 'hoodies': selected lst_015 → PASS
+  C4 'dresses': selected lst_013 → PASS
+  C4 'blazers': selected lst_018 → PASS
+  C4 'belts': selected lst_014 → PASS
+  C4 'denim pants': selected lst_005 → FAIL
+  C4 'sweater': selected lst_008 → PASS
+  C4 'purse': selected lst_039 → PASS
+  C4 'trainers': selected lst_019 → PASS
+  C4 'headwear': selected lst_034 → PASS
+C2 10/10   C3 3/5   C4 9/10
+```
+
+**C5:** `c5_stdout.txt`. The trace is from `agent.py::run_agent`; the
+`try N:` lines are printed by `run_eval.py::main`. Below are try 1 of each
+scenario, the full fit card that `run_eval.py::write_report` saved to
+`run_2026-11-18_0226_capstone_run1.md`, and run 1's scored entry, which
+`capstone_runlog.py::main` wrote to `results/capstone_runs/RUN_LOG.md`.
+
+Matching query, try 1. All three tools ran, the selected listing is `lst_006`
+(not unit 4's `lst_021`), and its id and price are stamped on both model
+outputs:
+
+```
+matching query completes  (example wardrobe)
+  query: vintage graphic tee under $30
+[1] parse_query
+      in:  vintage graphic tee under $30
+      out: {'description': 'vintage graphic tee', 'size': None, 'max_price': 30.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'vintage graphic tee', 'size': None, 'max_price': 30.0}
+      out: 10 items: Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey, Y2K Baby Tee — Butterfly Print … +7 more
+      →    branch: results, continuing
+[3] select_item
+      in:  10 results
+      out: Graphic Tee — 2003 Tour Bootleg Style ($24.0, depop)
+      →    first result
+[4] suggest_outfit
+      in:  new_item=lst_006 'Graphic Tee — 2003 Tour Bootleg Style' ($24.0), wardrobe=10 items
+      out: [lst_006 · $24.0] Here are two ways to style your new 2003 tour bootleg tee using items already in your wardro…
+[5] create_fit_card
+      in:  new_item=lst_006 'Graphic Tee — 2003 Tour Bootleg Style' ($24.0), outfit=<suggest_outfit text>
+      out: [lst_006 · $24.0] Scored this absolute gem of a 2003 tour bootleg tee on Depop for just $24, and the vintage f…
+  try 1: completed — fit card 290 chars
+```
+
+```
+Fit card:
+
+[lst_006 · $24.0]
+Scored this absolute gem of a 2003 tour bootleg tee on Depop for just $24, and the vintage fade on it is unreal. It’s got that heavy-duty grunge energy that makes any basic outfit look instantly cool. Grab it over on my shop before I change my mind and keep it for myself!
+```
+
+Impossible query, try 1. It stopped before `suggest_outfit`:
+
+```
+impossible query stops early  (example wardrobe)
+  query: designer ballgown size XXS under $5
+[1] parse_query
+      in:  designer ballgown size XXS under $5
+      out: {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'designer ballgown', 'size': 'XXS', 'max_price': 5.0}
+      out: [] (empty)
+      →    branch: empty, stopping
+  try 1: stopped early — No items found matching 'designer ballgown' under $5.0 in si
+```
+
+Empty wardrobe, try 1. The selected listing is `lst_007` (not unit 4's
+`lst_004`), and there's no `semantic_search_listings` step, so the fallback
+didn't cause the change:
+
+```
+empty wardrobe  (empty wardrobe)
+  query: denim jacket under $50
+[1] parse_query
+      in:  denim jacket under $50
+      out: {'description': 'denim jacket', 'size': None, 'max_price': 50.0}
+[2] search_listings (via MCP)
+      in:  {'description': 'denim jacket', 'size': None, 'max_price': 50.0}
+      out: 7 items: Denim Jacket — Light Wash, Cropped, 90s Track Jacket — Navy/White Stripe, High-Waisted Denim Shorts — Cutoff … +4 more
+      →    branch: results, continuing
+[3] select_item
+      in:  7 results
+      out: Denim Jacket — Light Wash, Cropped ($42.0, poshmark)
+      →    first result
+[4] suggest_outfit
+      in:  new_item=lst_007 'Denim Jacket — Light Wash, Cropped' ($42.0), wardrobe=0 items
+      out: [lst_007 · $42.0] That is a classic find! A vintage Wrangler light wash cropped denim jacket is one of the mos…
+[5] create_fit_card
+      in:  new_item=lst_007 'Denim Jacket — Light Wash, Cropped' ($42.0), outfit=<suggest_outfit text>
+      out: [lst_007 · $42.0] Scored this vintage Wrangler light wash cropped denim jacket in excellent condition on Poshm…
+  try 1: completed — fit card 343 chars
+```
+
+Run 1's scored C5 entry. `criteria` is the number of tries (out of 5) that
+met each original criterion 1–5, and `ids_matching_unit4` is the number of
+tries (out of 10) that selected `lst_021`/`lst_004`:
+
+```json
+"run1": {
+  "started": "2026-11-18T02:21:20",
+  "finished": "2026-11-18T02:26:14",
+  "c5": {
+    "criteria": {"1": 5, "2": 5, "3": 5, "4": 5, "5": 5},
+    "selected": {
+      "matching query completes": ["lst_006", "lst_006", "lst_006", "lst_006", "lst_006"],
+      "impossible query stops early": ["(none)", "(none)", "(none)", "(none)", "(none)"],
+      "empty wardrobe": ["lst_007", "lst_007", "lst_007", "lst_007", "lst_007"]
+    },
+    "ids_matching_unit4": 0
+  }
+}
+```
+
+**How it was run:** `python capstone_runlog.py` runs `eval_retrieval.py`
+(C1), `eval_capstone.py` (C2–C4) and `run_eval.py` (C5, 5 tries per scenario)
+once per run, saves everything they print, and scores each cell from the
+saved files. Before using it, I checked its C5 scoring against two earlier
+runs I had scored by hand, and it matched both. The raw output for each run
+is in `results/capstone_runs/run1`–`run3`, and the scored table is in
+`results/capstone_runs/RUN_LOG.md`.
+
+A first attempt was killed partway through run 1, when my Claude Code session
+ended. Its partial output is kept in `results/capstone_runs_incomplete/` and
+is not used here.
+
+**The runs were identical.** All three gave the same numbers, and the same
+queries failed every time. Both searches are deterministic, so only the
+model's writing varied between runs. That varies the fit card text, not which
+listing is chosen or which branch runs.
+
+### Verdicts
+
+Each verdict is scored against the target set in `criteria.md`. A target
+counts as met only if it held in all three runs.
+
+- **C1: MET.** 15/15 in all 3 runs (target ≥ 12 of 15). It beat keyword
+  search on plurals and synonyms (10/10 vs 0/10) and tied it on exact wording
+  (5/5 vs 5/5).
+- **C2: MET.** 10/10 in all 3 runs (target 10 of 10).
+- **C3: MISSED.** 3/5 in all 3 runs (target 5 of 5).
+- **C4: MET.** 9/10 in all 3 runs (target ≥ 8 of 10).
+- **C5: MISSED.** All 5 original criteria were met in every run, but the
+  listing ids matched 0/10 in every run (target 10/10).
+
+### Diagnoses
+
+**C3 (MISSED).** The same 2 of 5 off-topic queries failed in all three runs:
+`how to change a car tire` and `pizza delivery near me`. **The stage is
+keyword search, `tools.py::search_listings`. The fallback and its floor never
+ran.** Called directly, `semantic_search_listings` returned 0 listings for all
+5 queries in all 3 runs.
+
+The mechanism is the description check, `elif keyword in desc_text`. It's a
+substring test against the whole description string, while the title check
+splits the title into words first. A query word therefore matches if it
+appears *inside* any word of a description:
+
+- "me" matches 17 listings, through "medium", "some" and similar words,
+  though no description contains "me" as a word.
+- "car" matches inside "cardigan", which is why the car-tire query styled a
+  knit cardigan.
+- "a" matches all 40 listings.
+
+Keyword search returns 10 results, so the agent never takes its empty-result
+branch, and it spends 2 model calls styling an unrelated listing.
+
+My criterion assumed an off-topic query would reach the fallback, meaning
+keyword search returns `[]` for words that aren't in the catalogue. That
+assumption is false for any query that contains a short or common word.
+
+Whole-word matching would fix the pizza query: none of its four words appears
+as a whole word in any listing. It wouldn't fix the car-tire query on its own,
+because "a" is a real word in 18 descriptions and "to" in 5. That query also
+needs filler words like "a" and "to" ignored.
+
+**C5 (MISSED).** All five original criteria were met in all three runs, but
+the selected listings differed from unit 4's in all 10 tries of every run.
+The criterion 1 query selected `lst_006`, a graphic tee, instead of `lst_021`,
+the olive trousers. The empty-wardrobe query selected `lst_007`, a denim
+jacket, instead of `lst_004`, a track jacket. **The stage is the query parser,
+`agent.py::parse_query`. The fallback isn't involved.** Every trace shows
+`search_listings` returning results ("branch: results, continuing") and no
+`semantic_search_listings` step, so keyword search picked the new listings.
+
+The mechanism is that the parser fix changed keyword search's input:
+
+- The old parser also read "under $30" as size "30". The size filter is a
+  substring test, so only "W30" listings got through, and with the $30 cap
+  that left exactly one result: `lst_021`.
+- The old parser turned "denim jacket" into "deni jacket" with size M, which
+  ranked the track jacket (`lst_004`) first.
+
+With clean input, keyword search now returns the items the queries actually
+ask for. The id check was written to catch the fallback firing when it
+shouldn't. It assumed the fallback was the only thing that could change the
+selected listing. But the two unit 4 listings were themselves products of the
+parser bug, so fixing the parser changed them. The target stays as written,
+and this counts as a miss.
+
+**C4 (MET, but not 10/10).** The one miss in every run is `denim pants`.
+Keyword search returns 7 listings. Five of them tie at the top with a score
+of 2, each matching one title word: corduroy pants, cargo pants, a denim
+jacket, denim shorts and a denim vest. Corduroy pants (`lst_005`) wins the
+tie only because it comes first in the catalogue. The two actual pairs of
+jeans score 1.5, because "denim" is only in their style tags and neither
+title contains "pants". The result isn't empty, so the fallback never runs. That's the "keyword search is
+wrong but not empty" case the capstone left out of scope. Embedding search
+alone ranks a pair of jeans first for this query (C1).
+
+
+---
+
+## The Capstone Improvement
+
+### The pattern
+
+Two of the remaining failures come from the same stage. C3's two misses
+(`how to change a car tire`, `pizza delivery near me`) and the one query C4
+still gets wrong (`denim pants`) all happen in **keyword search,
+`tools.py::search_listings`**. In each case keyword search returns a result
+that isn't empty but is built from incidental matches, and the fallback only
+runs on an empty result. That's one problem with several symptoms: keyword
+search's idea of a match is too loose to serve as the fallback's trigger.
+
+C5's miss has a different cause. It comes from the earlier parser fix, which
+changed the listings selected for unit 4's two scenarios, and that change was
+intended. No change to search can make C5's id check pass without bringing
+the parser bug back. So C5 stays MISSED, and this improvement doesn't target
+it.
+
+### What I changed
+
+One change, in `tools.py::search_listings`:
+
+1. **Whole-word matching.** The description check was `keyword in
+   desc_text`, a substring test against the whole description string. It now
+   compares against the description's words, the same way the title check
+   already worked. "me" no longer matches "medium", and "car" no longer
+   matches "cardigan".
+2. **Filler words are ignored.** Words like "a", "to", "the", "me" and "how"
+   are dropped from the query before matching (`_STOPWORDS`). The diagnosis
+   showed whole-word matching alone wasn't enough: "a" is a real word in 18
+   descriptions and "to" in 5, so the car-tire query would still have matched.
+
+Nothing else changed: same parser, same fallback, same 0.60 floor, same
+prompts.
+
+**Which failure it was meant to fix:** C3. The diagnosis named keyword
+search as the stage and substring matching as the mechanism, and this
+removes that mechanism.
+
+**Checked before spending any model calls:** I ran old and new keyword search
+on all 27 queries the evals use. 4 changed:
+
+- C3's two failing queries now return `[]`.
+- `graphic tee` and `slip dress` lost a few incidental matches at the bottom
+  of their lists. One was a belt that matched "dress" inside "dressed up".
+  Their top results didn't change.
+
+Every other query, including all three `run_eval.py` scenarios, returned
+exactly the same listings.
+
+### Run log after the improvement
+
+Three separate runs, cache off, 18 November 2026, 02:54–03:08. Produced by
+`capstone_runlog.py --out capstone_runs_after_fix`. Raw output for each run is
+in `results/capstone_runs_after_fix/run1`–`run3`, and the scored table is in
+`results/capstone_runs_after_fix/RUN_LOG.md`.
+
+| Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
+|---|---|---|---|---|---|
+| C1. Embedding hit@3 ≥ 12/15, beats keyword on plurals/synonyms, ties on exact | ≥ 12 of 15 | 15/15 (keyword 5/15) | 15/15 (keyword 5/15) | 15/15 (keyword 5/15) | MET |
+| C2. Recorded strategy matches whether keyword search was empty | 10 of 10 | 10/10 | 10/10 | 10/10 | MET |
+| C3. Unseen off-topic queries return 0 listings and make 0 model calls | 5 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| C4. Plural/synonym queries typed into the agent select a labelled listing | ≥ 8 of 10 | 9/10 | 9/10 | 9/10 | MET |
+| C5. Original criteria 1–5 all MET, and `lst_021`/`lst_004` selected in 10 of 10 tries | 5/5 MET; ids 10/10 | 5/5 MET; ids 0/10 | 5/5 MET; ids 0/10 | 5/5 MET; ids 0/10 | MISSED |
+
+**Real output from run 1:** `results/capstone_runs_after_fix/run1/c2_c3_c4_stdout.txt`.
+The trace is from `agent.py::run_agent` (via `trace.py::step`); the `C3 …` and
+`C2 …` lines are printed by `eval_capstone.py::main`. Here is the car-tire
+query that failed in every earlier run. Keyword search now returns `[]`, the
+fallback runs, the floor turns the query away, and the run stops before
+`suggest_outfit`:
+
+```
+[1] parse_query
+      in:  how to change a car tire
+      out: {'description': 'how to change a car tire', 'size': None, 'max_price': None}
+[2] search_listings (via MCP)
+      in:  {'description': 'how to change a car tire', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, trying embedding search
+[3] semantic_search_listings (via MCP)
+      in:  {'description': 'how to change a car tire', 'size': None, 'max_price': None}
+      out: [] (empty)
+      →    branch: empty, stopping
+  C3 'how to change a car tire': direct 0 listings, agent no_results with 0 calls → PASS
+```
+
+```
+  C3 'airline ticket refund': direct 0 listings, agent no_results with 0 calls → PASS
+  C3 'how to change a car tire': direct 0 listings, agent no_results with 0 calls → PASS
+  C3 'python list comprehension': direct 0 listings, agent no_results with 0 calls → PASS
+  C3 'pizza delivery near me': direct 0 listings, agent no_results with 0 calls → PASS
+  C3 'mortgage interest rates': direct 0 listings, agent no_results with 0 calls → PASS
+C2 10/10   C3 5/5   C4 9/10
+```
+
+Before this change, the same query returned 10 listings at step [2] and the
+agent styled a knit cardigan with 2 model calls (see the C3 trace under
+**Real output from run 1** above).
+
+### Did it help, and how do I know
+
+**Yes, for the failure it was aimed at.** C3 went from 3/5 in every run to
+5/5 in every run, which moves it from MISSED to MET. The two queries that
+failed before now stop at the fallback with 0 model calls in all three runs.
+Each of them used to cost 2 model calls and showed an unrelated listing.
+
+**Nothing else moved.** C1, C2 and C4 scored exactly what they scored before,
+and C5 still met all five original criteria in every try. That matches the
+offline check: the change only affected incidental matches, and no query's
+top result changed.
+
+**What it didn't fix:**
+
+- **C4's `denim pants` still misses in every run.** Both of its words
+  genuinely appear in listings, so whole-word matching changes nothing for
+  it. Five listings tie at the top with one title-word match each, and
+  corduroy pants wins the tie by catalogue order. Fixing that means changing
+  how keyword search ranks, or letting the fallback run when keyword results
+  are weak rather than empty. That's the "wrong but not empty" case the
+  capstone left out of scope.
+- **C5 stays MISSED** for the reason given above. It meets every original
+  target, but its id check is tied to listings the parser bug produced.
+
+That leaves 4 of 5 capstone criteria MET. C4 is the loosest of them: it met
+its target of 8 of 10 with a 9/10 that never moved across six runs. If I
+tightened one, it would be C4, to 10 of 10. That would turn the `denim pants`
+miss from accepted into required, and it can't pass until keyword search's
+ranking changes.
+
+
+---
+
+## What's Still Broken — Capstone
+
+**C5 is the one criterion still missed.** In every run it meets all five
+original criteria. It misses on its listing-id check, which expects unit 4's
+`lst_021` and `lst_004`; the agent now selects `lst_006` and `lst_007`.
+
+- **What I'd do:** revise the criterion. Following the course's rule, I'd add
+  the revision underneath and leave the original line as it is. The revised
+  check would be what the id test was meant to catch: in both scenarios the
+  trace has no `semantic_search_listings` step, and the selected listing is
+  keyword search's first result.
+- **Why I stopped:** this miss isn't a defect I can fix in the code. The only
+  change that would bring back `lst_021` and `lst_004` is putting the parser
+  bug back. I left the revision undone because the course treats a revision
+  as earning credit only when a criterion is broken, meaning it can't be
+  measured. This one can be measured; it just measures something that stopped
+  being meaningful once the parser was fixed. That call belongs to the grader,
+  not to me lowering my own target, so the miss stays recorded.
+
+**C4 is met, but `denim pants` fails in every run (9/10 against a target of
+8).**
+
+- **What I'd do:** let the fallback run when keyword results are weak, not
+  only when they're empty. For example, run it when the top keyword score
+  matches only one query word. For this query, five listings tie on a single
+  title word and corduroy pants wins by catalogue order, while embedding
+  search alone ranks a pair of jeans first (C1).
+- **Why I stopped:** it's the case I ruled out of scope before building: "I'm
+  not replacing keyword search or blending the two." Changing when the
+  fallback fires would change C2's branch rule and every keyword-search result
+  the original criteria depend on. It needs its own criteria and its own
+  before-and-after run, not a fix squeezed in at the end.
+
+**The target I'd tighten:** C4, from 8 of 10 to **10 of 10**. It scored 9/10
+in all six runs, so the current target never tests the one miss it contains.
+At 10 of 10, `denim pants` stops being an accepted miss and becomes a
+requirement.
+
+**What I'd do next:** if this were real and I had another unit, I'd first make
+the fallback trigger on weak keyword results instead of only empty ones,
+because `denim pants` is the one failure left where a user gets a confident
+fit card for the wrong item with nothing on screen to show it's wrong. Every
+other failure the criteria found now either stops with a message or picks the
+right listing, so that silent wrong answer is the most expensive thing still
+in the system.
+
+---
+
 ## Instrumentation
 
 **What gets logged.** Every agent run writes one JSON record through
@@ -807,6 +1422,43 @@ records. Averages and raw records: `results/cost_2026-11-18_0016.md`.
   cost.
 - **Render's free tier.** It's $0 too. Its cost is the roughly one-minute
   wake-up after 15 idle minutes, which isn't part of any single run.
+- **Thinking tokens.** Google bills a model's thinking tokens as output. My
+  output count is `candidates_token_count`, which leaves out any thinking
+  tokens, so if the model used any, the real output cost is higher than shown.
+- **The capstone fixes.** I measured this on 18 November, before the parser
+  and keyword-search fixes. A complete run still makes exactly 2 generation
+  calls, but the selected item is now different, so the token counts per run
+  may shift slightly.
+
+**For a hundred people a day:** if 100 people each run one complete search a
+day, FitFindr would cost about **$0.12 a day (about $3.55 a month)** at
+Gemini's paid standard rate, and it would fit within the free tier's 15
+requests a minute as long as no more than 7 searches arrive in the same
+minute.
+
+The arithmetic. Rates are from Google's Gemini API pricing page, checked 18
+November 2026: `gemini-3.5-flash-lite` costs $0.30 per 1M input tokens and
+$2.50 per 1M output tokens.
+
+```
+one run, input:   604.7 tokens × $0.30 / 1,000,000  = $0.0001814
+one run, output:  401.0 tokens × $2.50 / 1,000,000  = $0.0010025
+one run, total:                                       $0.0011839
+
+100 runs a day:   100 × $0.0011839                  = $0.1184 a day
+30 days:          30  × $0.1184                     = $3.55 a month
+365 days:         365 × $0.1184                     = $43.21 a year
+
+requests:         100 runs × 2 generation calls     = 200 a day
+tokens:           100 × (604.7 + 401.0)             = 100,570 a day
+active compute:   100 × 3.0 s                       = 300 s, about 5 minutes a day
+```
+
+Output is 85% of the cost ($0.0010025 of $0.0011839 per run), even though it's
+fewer tokens than the input, because output tokens cost about 8 times as much.
+The outfit suggestion is the longest output, so its length is what to cut if
+cost ever mattered. The assumption that matters most is "one search each": at
+three searches per person, every figure above triples, to $0.36 a day.
 
 ---
 
