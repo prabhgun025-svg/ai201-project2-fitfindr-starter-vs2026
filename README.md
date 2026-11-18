@@ -1460,7 +1460,7 @@ The outfit suggestion is the longest output, so its length is what to cut if
 cost ever mattered. The assumption that matters most is "one search each": at
 three searches per person, every figure above triples, to $0.36 a day.
 
-**How I used AI** 
+**How I used AI (Capstone) ** 
 I used claude to help me write my criteria out especially for number 3 and 5. I asked claude to help me figure out why C3 & C5 were being missed. It said that the criteria failed because keyword search counted a query word as a match whenever it appeared inside any word of a listings description. So me matched medium and car matched cardigan. For Criteria 5, it failed because it requires the agent to pick the same two listings as unit 4 but those pinks only happened because the old query parsar read under $30 as size 30 and turned denim jacket into deni jacket. I also asked the AI to guide me through trying to fix each of the tests and helping me with any questions I have had. 
 
 ---
