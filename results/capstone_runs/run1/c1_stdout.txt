@@ -1,0 +1,36 @@
+# Retrieval eval — hit@3
+
+Run 2026-11-18 02:21. Embedding model `gemini-embedding-001`, min similarity 0.6. No size or price filter.
+
+## Summary
+
+| Group | Keyword | Embedding | Agent policy (keyword → embedding if empty) |
+|---|---|---|---|
+| plural | 0/5 | 5/5 | 5/5 |
+| synonym | 0/5 | 5/5 | 4/5 |
+| exact | 5/5 | 5/5 | 5/5 |
+| **all** | **5/15** | **15/15** | **14/15** |
+
+## Per query
+
+| Group | Query | Relevant | Keyword top 3 | KW | Embedding top 3 (score) | EM | Fallback ran? | Policy |
+|---|---|---|---|---|---|---|---|---|
+| plural | tees | lst_006, lst_002, lst_033 | (empty) | miss | lst_033 (0.67), lst_002 (0.67), lst_006 (0.66) | HIT | yes | HIT |
+| plural | hoodies | lst_015 | (empty) | miss | lst_015 (0.67), lst_040 (0.63), lst_027 (0.63) | HIT | yes | HIT |
+| plural | dresses | lst_013 | (empty) | miss | lst_013 (0.66), lst_029 (0.63), lst_036 (0.62) | HIT | yes | HIT |
+| plural | blazers | lst_018, lst_036 | (empty) | miss | lst_018 (0.69), lst_036 (0.69), lst_029 (0.63) | HIT | yes | HIT |
+| plural | belts | lst_014 | (empty) | miss | lst_014 (0.68), lst_031 (0.62), lst_005 (0.61) | HIT | yes | HIT |
+| synonym | denim pants | lst_001, lst_031, lst_037 | lst_005, lst_007, lst_011 | miss | lst_037 (0.69), lst_016 (0.67), lst_001 (0.67) | HIT | no | miss |
+| synonym | sweater | lst_008, lst_030, lst_012, lst_027 | (empty) | miss | lst_008 (0.68), lst_027 (0.68), lst_040 (0.66) | HIT | yes | HIT |
+| synonym | purse | lst_039 | (empty) | miss | lst_039 (0.68), lst_034 (0.62), lst_040 (0.61) | HIT | yes | HIT |
+| synonym | trainers | lst_019, lst_035 | (empty) | miss | lst_019 (0.63), lst_009 (0.61), lst_025 (0.61) | HIT | yes | HIT |
+| synonym | headwear | lst_034 | (empty) | miss | lst_034 (0.67), lst_023 (0.63), lst_026 (0.62) | HIT | yes | HIT |
+| exact | graphic tee | lst_006, lst_002, lst_033 | lst_006, lst_002, lst_033 | HIT | lst_006 (0.72), lst_033 (0.70), lst_002 (0.70) | HIT | no | HIT |
+| exact | denim jacket | lst_007 | lst_007, lst_004, lst_016 | HIT | lst_007 (0.71), lst_038 (0.69), lst_016 (0.65) | HIT | no | HIT |
+| exact | chelsea boots | lst_028 | lst_028 | HIT | lst_028 (0.71), lst_009 (0.62), lst_019 (0.60) | HIT | no | HIT |
+| exact | slip dress | lst_013 | lst_013, lst_014, lst_018 | HIT | lst_013 (0.71), lst_029 (0.61) | HIT | no | HIT |
+| exact | cargo pants | lst_011 | lst_011, lst_005 | HIT | lst_011 (0.72), lst_031 (0.68), lst_021 (0.66) | HIT | no | HIT |
+
+Wrote results/retrieval_2026-11-18_0221.md
+
+[exit code 0]
