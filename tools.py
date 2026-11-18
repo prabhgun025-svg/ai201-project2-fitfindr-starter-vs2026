@@ -22,8 +22,12 @@ That last line is what your loop branches on. "Returns a list" earns nothing —
 the description has to say what is *in* the list.
 """
 
+import hashlib
+import json
+import math
+
 import config  # noqa: F401 — you'll use this in search_listings
-from generate import generate
+from generate import embed, generate
 from utils.data_loader import load_listings
 
 
@@ -88,21 +92,9 @@ def search_listings(
     # Filter by price and size, score by keyword overlap
     candidates = []
     for listing in listings:
-        # Filter by max_price
-        if max_price is not None and listing.get("price", float("inf")) > max_price:
+        if not _passes_filters(listing, size, max_price):
             continue
-        
-        # Filter by size (case-insensitive, handle size ranges like "S/M")
-        if size is not None:
-            listing_size = (listing.get("size") or "").lower()
-            query_size = size.lower()
-            # Match if the query size appears as a standalone component or full match
-            if query_size not in listing_size and listing_size != query_size:
-                # Check if it's a component of a range like "S/M" or "XS-M"
-                size_parts = listing_size.replace("-", "/").split("/")
-                if query_size not in size_parts:
-                    continue
-        
+
         # Score by keyword overlap with title and description
         title_text = (listing.get("title") or "").lower()
         desc_text = (listing.get("description") or "").lower()
@@ -126,6 +118,130 @@ def search_listings(
     results = [listing for _, listing in candidates[:config.SEARCH_RESULT_LIMIT]]
     
     return results
+
+
+def _passes_filters(listing: dict, size: str | None, max_price: float | None) -> bool:
+    """The size and price filters, shared by keyword and embedding search."""
+    # Filter by max_price
+    if max_price is not None and listing.get("price", float("inf")) > max_price:
+        return False
+
+    # Filter by size (case-insensitive, handle size ranges like "S/M")
+    if size is not None:
+        listing_size = (listing.get("size") or "").lower()
+        query_size = size.lower()
+        # Match if the query size appears as a standalone component or full match
+        if query_size not in listing_size and listing_size != query_size:
+            # Check if it's a component of a range like "S/M" or "XS-M"
+            size_parts = listing_size.replace("-", "/").split("/")
+            if query_size not in size_parts:
+                return False
+    return True
+
+
+# ── Capstone: embedding search ───────────────────────────────────────────────
+#
+# A second retrieval strategy. Keyword search only matches exact words, so
+# "tees" finds nothing even though there are three tees. Here every listing's
+# title, description and style tags become one embedding vector, the query
+# becomes another, and listings are ranked by cosine similarity — closeness in
+# meaning rather than shared spelling.
+#
+# The 40 listing vectors are computed once and saved under .cache/, keyed by
+# the model name and a hash of the listing text, so editing listings.json or
+# switching models rebuilds the index automatically.
+
+_index: dict[str, list[float]] | None = None
+
+
+def _listing_text(listing: dict) -> str:
+    """What gets embedded for one listing."""
+    return (
+        f"{listing.get('title', '')}. {listing.get('description', '')} "
+        f"Style: {', '.join(listing.get('style_tags') or [])}."
+    )
+
+
+def _listing_index(listings: list[dict]) -> dict[str, list[float]]:
+    """id → vector for every listing, from disk if possible, else one embed call."""
+    global _index
+    texts = {l["id"]: _listing_text(l) for l in listings}
+    digest = hashlib.sha256(
+        json.dumps([config.EMBEDDING_MODEL, texts], sort_keys=True).encode("utf-8")
+    ).hexdigest()[:16]
+    path = config.CACHE_DIR / f"listing_embeddings_{digest}.json"
+
+    if _index is not None and set(_index) == set(texts):
+        return _index
+    if path.exists():
+        _index = json.loads(path.read_text(encoding="utf-8"))
+        return _index
+
+    ids = list(texts)
+    vectors = embed([texts[i] for i in ids], task_type="RETRIEVAL_DOCUMENT")
+    _index = dict(zip(ids, vectors))
+    config.CACHE_DIR.mkdir(exist_ok=True)
+    path.write_text(json.dumps(_index), encoding="utf-8")
+    return _index
+
+
+def _cosine(a: list[float], b: list[float]) -> float:
+    dot = sum(x * y for x, y in zip(a, b))
+    norm = math.sqrt(sum(x * x for x in a)) * math.sqrt(sum(y * y for y in b))
+    return dot / norm if norm else 0.0
+
+
+def semantic_search_scored(
+    description: str,
+    size: str | None = None,
+    max_price: float | None = None,
+) -> list[tuple[float, dict]]:
+    """Like semantic_search_listings, but keeps each listing's similarity score."""
+    if not description or not description.strip():
+        return []
+    listings = load_listings()
+    index = _listing_index(listings)
+    query_vec = embed([description], task_type="RETRIEVAL_QUERY")[0]
+
+    scored = []
+    for listing in listings:
+        if not _passes_filters(listing, size, max_price):
+            continue
+        score = _cosine(query_vec, index[listing["id"]])
+        if score >= config.EMBEDDING_MIN_SIMILARITY:
+            scored.append((round(score, 4), listing))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return scored[:config.SEARCH_RESULT_LIMIT]
+
+
+def semantic_search_listings(
+    description: str,
+    size: str | None = None,
+    max_price: float | None = None,
+) -> list[dict]:
+    """
+    Search listings by meaning instead of exact words.
+
+    Same inputs, same filters and same return shape as search_listings, so the
+    agent can swap one for the other without changing anything downstream.
+
+    Args:
+        description: what the user wants, in their words ("tees", "purse").
+        size:        same size filter as search_listings, or None.
+        max_price:   same inclusive US-dollar ceiling as search_listings, or None.
+
+    Returns:
+        Up to config.SEARCH_RESULT_LIMIT listing dicts, most similar first.
+        Returns [] when the filters rule everything out or nothing reaches
+        config.EMBEDDING_MIN_SIMILARITY.
+
+    Raises:
+        ModelUnavailable if the embedding model can't be reached.
+
+    Test it:
+        python -c "from tools import semantic_search_listings as s; print([l['title'] for l in s('tees')])"
+    """
+    return [listing for _, listing in semantic_search_scored(description, size, max_price)]
 
 
 # ── Tool 2: suggest_outfit ────────────────────────────────────────────────────
